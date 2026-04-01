@@ -127,7 +127,9 @@ h1 {
   border-left: 3px solid transparent;
   transition: background 0.3s, border-color 0.3s;
   min-height: 30px;
+  cursor: pointer;
 }
+.asm-line:hover { background: var(--bg-tertiary); }
 .asm-line.active { background: var(--blue-50); border-left-color: var(--blue-600); }
 .asm-line.kernel-active { background: var(--red-50); border-left-color: var(--red-400); }
 .asm-line.done { opacity: 0.35; }
@@ -422,6 +424,23 @@ function renderCode(el, lines, prefix) {
 }
 renderCode($('userCode'), userLines, 'u');
 renderCode($('kernelCode'), kernelLines, 'k');
+
+function jumpTo(prefix, lineIdx) {
+  if (autoId) toggleAuto();
+  var found = -1;
+  for (var i = 0; i < steps.length; i++) {
+    if (prefix === 'u' && steps[i].u === lineIdx && steps[i].k < 0) { found = i; break; }
+    if (prefix === 'k' && steps[i].k === lineIdx) { found = i; break; }
+  }
+  if (found >= 0) { cur = found; render(); }
+}
+
+userLines.forEach(function(_, i) {
+  $('u' + i).addEventListener('click', function() { jumpTo('u', i); });
+});
+kernelLines.forEach(function(_, i) {
+  $('k' + i).addEventListener('click', function() { jumpTo('k', i); });
+});
 
 $('regs').innerHTML = regNames.map(r =>
   '<div class="reg-card' + (regDesc[r] ? ' has-tip' : '') + '" id="rc_' + r + '">' +
