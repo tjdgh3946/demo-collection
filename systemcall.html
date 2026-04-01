@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>syscall 어셈블리 데모 — User ↔ Kernel Mode Switch</title>
+<style>
+:root {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f5f5f0;
+  --bg-tertiary: #eeeee8;
+  --text-primary: #1a1a1a;
+  --text-secondary: #6b6b66;
+  --text-tertiary: #9c9a92;
+  --border: rgba(0,0,0,0.1);
+  --border-hover: rgba(0,0,0,0.2);
+  --blue-50: #E6F1FB; --blue-600: #185FA5; --blue-800: #0C447C;
+  --red-50: #FCEBEB; --red-400: #E24B4A; --red-800: #791F1F;
+  --teal-600: #0F6E56;
+  --coral-600: #D85A30;
+  --purple-600: #534AB7;
+  --amber-600: #BA7517;
+  --green-50: #EAF3DE; --green-800: #27500A;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'SF Mono', 'Cascadia Code', 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+  --radius: 8px;
+  --radius-lg: 12px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #242422;
+    --bg-tertiary: #2c2c2a;
+    --text-primary: #e8e6de;
+    --text-secondary: #9c9a92;
+    --text-tertiary: #6b6b66;
+    --border: rgba(255,255,255,0.1);
+    --border-hover: rgba(255,255,255,0.2);
+    --blue-50: #042C53; --blue-600: #85B7EB; --blue-800: #B5D4F4;
+    --red-50: #501313; --red-400: #F09595; --red-800: #F7C1C1;
+    --green-50: #173404; --green-800: #C0DD97;
+  }
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: var(--font-sans);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  padding: 2rem 1rem;
+}
+.container {
+  max-width: 900px;
+  width: 100%;
+}
+h1 {
+  font-size: 20px;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+.subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 1.5rem;
+}
+.main-card {
+  background: var(--bg-primary);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+}
+.top-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+.mode-badge {
+  display: inline-block;
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  transition: all 0.4s;
+}
+.mode-user { background: var(--blue-50); color: var(--blue-800); }
+.mode-kernel { background: var(--red-50); color: var(--red-800); }
+.step-info {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-left: auto;
+}
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+}
+@media (max-width: 700px) {
+  .grid { grid-template-columns: 1fr; }
+}
+.section-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 4px 0;
+  margin-bottom: 4px;
+}
+.code-block {
+  background: var(--bg-primary);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+.asm-line {
+  display: flex;
+  align-items: stretch;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  border-left: 3px solid transparent;
+  transition: background 0.3s, border-color 0.3s;
+  min-height: 30px;
+}
+.asm-line.active { background: var(--blue-50); border-left-color: var(--blue-600); }
+.asm-line.kernel-active { background: var(--red-50); border-left-color: var(--red-400); }
+.asm-line.done { opacity: 0.35; }
+.ln {
+  min-width: 30px;
+  text-align: right;
+  padding: 5px 8px 5px 0;
+  color: var(--text-tertiary);
+  font-size: 11px;
+  user-select: none;
+}
+.code {
+  padding: 5px 10px;
+  flex: 1;
+  white-space: pre;
+  color: var(--text-primary);
+}
+.cmt { color: var(--text-tertiary); }
+.kw { color: var(--blue-600); }
+.reg { color: var(--coral-600); }
+.num { color: var(--teal-600); }
+.lbl { color: var(--purple-600); font-weight: 600; }
+.str { color: var(--amber-600); }
+.regs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 6px;
+  margin: 8px 0 12px;
+}
+.reg-card {
+  background: var(--bg-secondary);
+  border-radius: var(--radius);
+  padding: 6px 10px;
+  transition: all 0.4s;
+}
+.reg-card.changed { outline: 2px solid var(--red-400); outline-offset: -2px; }
+.reg-card .rname { font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary); text-transform: uppercase; }
+.reg-card .rval { font-family: var(--font-mono); font-size: 13px; font-weight: 600; color: var(--text-primary); margin-top: 1px; transition: color 0.3s; }
+.reg-card.changed .rval { color: var(--red-400); }
+.stack-vis { display: flex; gap: 16px; margin: 8px 0; }
+.stack-col { flex: 1; }
+.stack-title {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+.stack-frame {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 5px 8px;
+  border-radius: 4px;
+  margin-bottom: 3px;
+  transition: all 0.3s;
+}
+.stack-frame.user-f { background: var(--blue-50); color: var(--blue-800); }
+.stack-frame.kernel-f { background: var(--red-50); color: var(--red-800); }
+.stack-frame.inactive { opacity: 0.3; }
+.narration {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  margin: 1rem 0;
+  padding: 12px 16px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  min-height: 3.4em;
+}
+.narration code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+.ctrl-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.ctrl-btn {
+  font-size: 13px;
+  padding: 7px 18px;
+  border-radius: var(--radius);
+  border: 0.5px solid var(--border-hover);
+  background: transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  transition: all 0.15s;
+}
+.ctrl-btn:hover { background: var(--bg-secondary); }
+.ctrl-btn:active { transform: scale(0.98); }
+.ctrl-btn:disabled { opacity: 0.3; cursor: default; }
+.auto-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: var(--radius);
+  background: var(--green-50);
+  color: var(--green-800);
+}
+.kbd {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-tertiary);
+  background: var(--bg-secondary);
+  border: 0.5px solid var(--border);
+  padding: 1px 5px;
+  border-radius: 3px;
+  margin-left: 4px;
+}
+.footer {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-top: 1.5rem;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>syscall — user &#8596; kernel mode switch</h1>
+  <p class="subtitle">x86-64 Linux에서 <code style="font-family:var(--font-mono);font-size:13px">sys_read</code>가 호출될 때 CPU 내부에서 벌어지는 일</p>
+
+  <div class="main-card">
+    <div class="top-bar">
+      <span style="font-size:14px;font-weight:500;">CPU mode:</span>
+      <span class="mode-badge mode-user" id="modeBadge">ring 3 (user)</span>
+      <span class="step-info" id="stepInfo"></span>
+    </div>
+
+    <div class="grid">
+      <div>
+        <div class="section-label">user code (.text)</div>
+        <div class="code-block" id="userCode"></div>
+        <div class="section-label">kernel handler (ring 0)</div>
+        <div class="code-block" id="kernelCode"></div>
+      </div>
+      <div>
+        <div class="section-label">registers</div>
+        <div class="regs" id="regs"></div>
+        <div class="stack-vis">
+          <div class="stack-col">
+            <div class="stack-title">user stack</div>
+            <div id="userStack"></div>
+          </div>
+          <div class="stack-col">
+            <div class="stack-title">kernel stack</div>
+            <div id="kernelStack"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="narration" id="narration"></div>
+
+    <div class="ctrl-row">
+      <button class="ctrl-btn" id="backBtn" onclick="back()">&larr; back <span class="kbd">&larr;</span></button>
+      <button class="ctrl-btn" id="stepBtn" onclick="step()">step &rarr; <span class="kbd">space</span></button>
+      <button class="ctrl-btn" id="autoBtn" onclick="toggleAuto()">auto play</button>
+      <button class="ctrl-btn" onclick="reset()">reset <span class="kbd">r</span></button>
+      <span id="autoLabel"></span>
+    </div>
+  </div>
+
+  <p class="footer">&larr; = back &middot; space = step &middot; r = reset &middot; 강의용 인터랙티브 데모</p>
+</div>
+
+<script>
+const userLines=[
+{code:'<span class="lbl">main:</span>',cmt:''},
+{code:'  <span class="kw">mov</span> <span class="reg">rdi</span>, <span class="num">fd</span>',cmt:'; arg1: file descriptor'},
+{code:'  <span class="kw">mov</span> <span class="reg">rsi</span>, <span class="num">buf</span>',cmt:'; arg2: buffer address'},
+{code:'  <span class="kw">mov</span> <span class="reg">rdx</span>, <span class="num">4096</span>',cmt:'; arg3: bytes to read'},
+{code:'  <span class="kw">mov</span> <span class="reg">rax</span>, <span class="num">0</span>',cmt:'; syscall # (sys_read=0)'},
+{code:'  <span class="kw">syscall</span>',cmt:'; !! TRAP -&gt; ring 0'},
+{code:'  <span class="cmt">; ... CPU returns here after sysret</span>',cmt:''},
+{code:'  <span class="kw">test</span> <span class="reg">rax</span>, <span class="reg">rax</span>',cmt:'; check return value'},
+];
+
+const kernelLines=[
+{code:'<span class="lbl">entry_SYSCALL_64:</span>',cmt:''},
+{code:'  <span class="kw">swapgs</span>',cmt:'; GS -&gt; kernel per-CPU data'},
+{code:'  <span class="kw">mov</span> [gs:<span class="num">rsp_scratch</span>], <span class="reg">rsp</span>',cmt:'; save user RSP'},
+{code:'  <span class="kw">mov</span> <span class="reg">rsp</span>, [gs:<span class="num">kernel_stack</span>]',cmt:'; load kernel RSP'},
+{code:'  <span class="kw">push</span> <span class="reg">rcx</span>',cmt:'; save user RIP (stored by CPU)'},
+{code:'  <span class="kw">push</span> <span class="reg">r11</span>',cmt:'; save user RFLAGS'},
+{code:'  <span class="kw">call</span> <span class="lbl">sys_read</span>',cmt:'; dispatch to actual handler'},
+{code:'  <span class="cmt">; ... disk I/O, copy to buf ...</span>',cmt:''},
+{code:'  <span class="kw">pop</span> <span class="reg">r11</span>',cmt:'; restore RFLAGS'},
+{code:'  <span class="kw">pop</span> <span class="reg">rcx</span>',cmt:'; restore user RIP'},
+{code:'  <span class="kw">mov</span> <span class="reg">rsp</span>, [gs:<span class="num">rsp_scratch</span>]',cmt:'; restore user RSP'},
+{code:'  <span class="kw">swapgs</span>',cmt:'; GS -&gt; user'},
+{code:'  <span class="kw">sysret</span>',cmt:'; !! ring 0 -&gt; ring 3'},
+];
+
+const regNames=['RAX','RCX','RDX','RSI','RDI','RSP','RIP','mode'];
+
+const steps=[
+{u:0,k:-1,regs:{RAX:'\u2014',RCX:'\u2014',RDX:'\u2014',RSI:'\u2014',RDI:'\u2014',RSP:'0x7fff1000',RIP:'0x401000',mode:'user'},
+ narr:'\ud504\ub85c\uadf8\ub7a8 \uc2dc\uc791. \uc720\uc800 \ubaa8\ub4dc\uc5d0\uc11c main \ud568\uc218 \uc9c4\uc785.',ustack:['main frame'],kstack:[]},
+{u:1,k:-1,regs:{RAX:'\u2014',RCX:'\u2014',RDX:'\u2014',RSI:'\u2014',RDI:'<b>3</b>',RSP:'0x7fff1000',RIP:'0x401004',mode:'user'},
+ narr:'<code>rdi</code>\uc5d0 \ud30c\uc77c \ub514\uc2a4\ud06c\ub9bd\ud130(3)\ub97c \ub123\ub294\ub2e4. \uc2dc\uc2a4\ud15c \ucf5c\uc758 \uccab \ubc88\uc9f8 \uc778\uc790.',ustack:['main frame'],kstack:[],changed:['RDI','RIP']},
+{u:2,k:-1,regs:{RAX:'\u2014',RCX:'\u2014',RDX:'\u2014',RSI:'<b>0x7fff0000</b>',RDI:'3',RSP:'0x7fff1000',RIP:'0x401008',mode:'user'},
+ narr:'<code>rsi</code>\uc5d0 \ubc84\ud37c \uc8fc\uc18c. \uc77d\uc740 \ub370\uc774\ud130\uac00 \uc5ec\uae30\uc5d0 \uc4f0\uc5ec\uc9c8 \uac83\uc774\ub2e4.',ustack:['main frame'],kstack:[],changed:['RSI','RIP']},
+{u:3,k:-1,regs:{RAX:'\u2014',RCX:'\u2014',RDX:'<b>4096</b>',RSI:'0x7fff0000',RDI:'3',RSP:'0x7fff1000',RIP:'0x40100c',mode:'user'},
+ narr:'<code>rdx</code>\uc5d0 \uc77d\uc744 \ubc14\uc774\ud2b8 \uc218 4096(4KB = \ud55c \ud398\uc774\uc9c0).',ustack:['main frame'],kstack:[],changed:['RDX','RIP']},
+{u:4,k:-1,regs:{RAX:'<b>0</b>',RCX:'\u2014',RDX:'4096',RSI:'0x7fff0000',RDI:'3',RSP:'0x7fff1000',RIP:'0x401010',mode:'user'},
+ narr:'<code>rax</code> = 0. \uc774\uac8c \uc2dc\uc2a4\ud15c \ucf5c \ubc88\ud638\ub2e4. 0 = <code>sys_read</code>. \uc900\ube44 \uc644\ub8cc.',ustack:['main frame'],kstack:[],changed:['RAX','RIP']},
+{u:5,k:-1,regs:{RAX:'0',RCX:'<b>0x401014</b>',RDX:'4096',RSI:'0x7fff0000',RDI:'3',RSP:'0x7fff1000',RIP:'<b>???</b>',mode:'<b>TRAP!</b>'},
+ narr:'<code>syscall</code> \uc2e4\ud589! CPU\uac00 \uc790\ub3d9\uc73c\ub85c: (1) \ud604\uc7ac RIP\ub97c RCX\uc5d0 \uc800\uc7a5 (2) RFLAGS\ub97c R11\uc5d0 \uc800\uc7a5 (3) MSR_LSTAR\uc5d0\uc11c \ucee4\ub110 \ud578\ub4e4\ub7ec \uc8fc\uc18c\ub97c \uc77d\uc5b4 RIP\uc5d0 \ub85c\ub4dc. \uc138\uacc4\uac00 \ubc14\ub00c\ub294 \uc21c\uac04.',ustack:['main frame'],kstack:[],changed:['RCX','RIP','mode']},
+{u:5,k:0,regs:{RAX:'0',RCX:'0x401014',RDX:'4096',RSI:'0x7fff0000',RDI:'3',RSP:'0x7fff1000',RIP:'<b>0xfffff200</b>',mode:'<b>kernel</b>'},
+ narr:'\ucee4\ub110 \ud578\ub4e4\ub7ec \uc9c4\uc785! RIP\uac00 \ucee4\ub110 \uc8fc\uc18c(0xfffff...)\ub85c \uc810\ud504\ud588\ub2e4. \ud558\uc9c0\ub9cc \uc544\uc9c1 RSP\ub294 \uc720\uc800 \uc2a4\ud0dd \u2014 \uc704\ud5d8\ud55c \uc0c1\ud0dc.',ustack:['main frame'],kstack:[],changed:['RIP','mode'],isKernel:true},
+{u:5,k:1,regs:{RAX:'0',RCX:'0x401014',RDX:'4096',RSI:'0x7fff0000',RDI:'3',RSP:'0x7fff1000',RIP:'0xfffff204',mode:'kernel'},
+ narr:'<code>swapgs</code> \u2014 GS \ub808\uc9c0\uc2a4\ud130\ub97c \ucee4\ub110\uc6a9 per-CPU \ub370\uc774\ud130\ub85c \uad50\uccb4. \uc774\uc81c \ucee4\ub110 \uc790\ub8cc\uad6c\uc870\uc5d0 \uc811\uadfc \uac00\ub2a5.',ustack:['main frame'],kstack:[],changed:['RIP'],isKernel:true},
+{u:5,k:2,regs:{RAX:'0',RCX:'0x401014',RDX:'4096',RSI:'0x7fff0000',RDI:'3',RSP:'0x7fff1000',RIP:'0xfffff208',mode:'kernel'},
+ narr:'\uc720\uc800 RSP(0x7fff1000)\ub97c \ucee4\ub110\uc758 \uc2a4\ud06c\ub798\uce58 \uacf5\uac04\uc5d0 \uc800\uc7a5. \ub098\uc911\uc5d0 \ub3cc\ub824\uc918\uc57c \ud558\ub2c8\uae4c.',ustack:['main frame'],kstack:[],changed:['RIP'],isKernel:true},
+{u:5,k:3,regs:{RAX:'0',RCX:'0x401014',RDX:'4096',RSI:'0x7fff0000',RDI:'3',RSP:'<b>0xffffe000</b>',RIP:'0xfffff20c',mode:'kernel'},
+ narr:'RSP\ub97c \ucee4\ub110 \uc2a4\ud0dd\uc73c\ub85c \uad50\uccb4! \uc774\uac8c \ud575\uc2ec\uc774\ub2e4 \u2014 \uc720\uc800 \uc2a4\ud0dd\uc740 \ud574\ucee4\uac00 \uc870\uc791 \uac00\ub2a5\ud558\ub2c8\uae4c, \ucee4\ub110\uc740 \uc790\uae30\ub9cc\uc758 \uc548\uc804\ud55c \uc2a4\ud0dd\uc744 \uc4f4\ub2e4.',ustack:['main frame'],kstack:['(kernel stack base)'],changed:['RSP','RIP'],isKernel:true},
+{u:5,k:4,regs:{RAX:'0',RCX:'0x401014',RDX:'4096',RSI:'0x7fff0000',RDI:'3',RSP:'0xffffdff8',RIP:'0xfffff210',mode:'kernel'},
+ narr:'<code>push rcx</code> \u2014 \uc720\uc800\uc758 \ubcf5\uadc0 \uc8fc\uc18c(0x401014)\ub97c \ucee4\ub110 \uc2a4\ud0dd\uc5d0 \uc800\uc7a5.',ustack:['main frame'],kstack:['(kernel stack base)','saved RIP: 0x401014'],changed:['RSP','RIP'],isKernel:true},
+{u:5,k:5,regs:{RAX:'0',RCX:'0x401014',RDX:'4096',RSI:'0x7fff0000',RDI:'3',RSP:'0xffffdff0',RIP:'0xfffff214',mode:'kernel'},
+ narr:'<code>push r11</code> \u2014 \uc720\uc800\uc758 RFLAGS\ub3c4 \uc800\uc7a5. \uc774\uc81c \uc720\uc800 \uc0c1\ud0dc\uac00 \uc644\uc804\ud788 \ubc31\uc5c5\ub410\ub2e4.',ustack:['main frame'],kstack:['(kernel stack base)','saved RIP: 0x401014','saved RFLAGS'],changed:['RSP','RIP'],isKernel:true},
+{u:5,k:6,regs:{RAX:'0',RCX:'0x401014',RDX:'4096',RSI:'0x7fff0000',RDI:'3',RSP:'0xffffdfe8',RIP:'0xfffff218',mode:'kernel'},
+ narr:'<code>call sys_read</code> \u2014 \uc2e4\uc81c \ud30c\uc77c \uc77d\uae30 \ud578\ub4e4\ub7ec\ub85c \uc9c4\uc785. \uc5ec\uae30\uc11c \ub514\uc2a4\ud06c I/O\uac00 \ubc1c\uc0dd\ud55c\ub2e4.',ustack:['main frame'],kstack:['(kernel stack base)','saved RIP: 0x401014','saved RFLAGS','sys_read frame'],changed:['RSP','RIP'],isKernel:true},
+{u:5,k:7,regs:{RAX:'<b>4096</b>',RCX:'0x401014',RDX:'4096',RSI:'0x7fff0000',RDI:'3',RSP:'0xffffdfe8',RIP:'0xfffff21c',mode:'kernel'},
+ narr:'\ub514\uc2a4\ud06c\uc5d0\uc11c 4096 \ubc14\uc774\ud2b8\ub97c \uc77d\uc5b4 \uc720\uc800 \ubc84\ud37c(0x7fff0000)\uc5d0 \ubcf5\uc0ac \uc644\ub8cc. RAX\uc5d0 \uc77d\uc740 \ubc14\uc774\ud2b8 \uc218(\ub9ac\ud134\uac12)\ub97c \ub123\ub294\ub2e4.',ustack:['main frame'],kstack:['(kernel stack base)','saved RIP: 0x401014','saved RFLAGS','sys_read frame'],changed:['RAX','RIP'],isKernel:true},
+{u:5,k:8,regs:{RAX:'4096',RCX:'0x401014',RDX:'4096',RSI:'0x7fff0000',RDI:'3',RSP:'0xffffdff0',RIP:'0xfffff220',mode:'kernel'},
+ narr:'<code>pop r11</code> \u2014 RFLAGS \ubcf5\uc6d0. \uc720\uc800 \ubaa8\ub4dc\uc758 \ud50c\ub798\uadf8 \uc0c1\ud0dc\ub97c \ub418\ub3cc\ub9b4 \uc900\ube44.',ustack:['main frame'],kstack:['(kernel stack base)','saved RIP: 0x401014'],changed:['RSP','RIP'],isKernel:true},
+{u:5,k:9,regs:{RAX:'4096',RCX:'<b>0x401014</b>',RDX:'4096',RSI:'0x7fff0000',RDI:'3',RSP:'0xffffdff8',RIP:'0xfffff224',mode:'kernel'},
+ narr:'<code>pop rcx</code> \u2014 \uc720\uc800 \ubcf5\uadc0 \uc8fc\uc18c(0x401014) \ubcf5\uc6d0. sysret\uc774 \uc774\uac78 RIP\uc5d0 \ub123\uc744 \uac83\uc774\ub2e4.',ustack:['main frame'],kstack:['(kernel stack base)'],changed:['RCX','RSP','RIP'],isKernel:true},
+{u:5,k:10,regs:{RAX:'4096',RCX:'0x401014',RDX:'4096',RSI:'0x7fff0000',RDI:'3',RSP:'<b>0x7fff1000</b>',RIP:'0xfffff228',mode:'kernel'},
+ narr:'\uc720\uc800 RSP \ubcf5\uc6d0! \ucee4\ub110 \uc2a4\ud0dd\uc5d0\uc11c \ub2e4\uc2dc \uc720\uc800 \uc2a4\ud0dd\uc73c\ub85c. \uac70\uc758 \ub2e4 \uc654\ub2e4.',ustack:['main frame'],kstack:['(kernel stack base)'],changed:['RSP','RIP'],isKernel:true},
+{u:5,k:11,regs:{RAX:'4096',RCX:'0x401014',RDX:'4096',RSI:'0x7fff0000',RDI:'3',RSP:'0x7fff1000',RIP:'0xfffff22c',mode:'kernel'},
+ narr:'<code>swapgs</code> \u2014 GS\ub97c \ub2e4\uc2dc \uc720\uc800\uc6a9\uc73c\ub85c \uad50\uccb4. \ucee4\ub110 \uc790\ub8cc\uad6c\uc870 \uc811\uadfc \ucc28\ub2e8.',ustack:['main frame'],kstack:['(kernel stack base)'],changed:['RIP'],isKernel:true},
+{u:5,k:12,regs:{RAX:'4096',RCX:'0x401014',RDX:'4096',RSI:'0x7fff0000',RDI:'3',RSP:'0x7fff1000',RIP:'<b>0x401014</b>',mode:'<b>user</b>'},
+ narr:'<code>sysret</code>!! RCX \u2192 RIP, R11 \u2192 RFLAGS, \ubaa8\ub4dc \u2192 ring 3. \uc544\ubb34 \uc77c \uc5c6\uc5c8\ub358 \uac83\ucc98\ub7fc \uc720\uc800 \ucf54\ub4dc\ub85c \ubcf5\uadc0.',ustack:['main frame'],kstack:[],changed:['RIP','mode']},
+{u:7,k:-1,regs:{RAX:'4096',RCX:'0x401014',RDX:'4096',RSI:'0x7fff0000',RDI:'3',RSP:'0x7fff1000',RIP:'0x401018',mode:'user'},
+ narr:'<code>test rax, rax</code> \u2014 \ub9ac\ud134\uac12 \ud655\uc778. RAX=4096\uc774\ubbc0\ub85c \uc77d\uae30 \uc131\uacf5! \uc720\uc800\ub294 \uadf8 \uc0ac\uc774\uc5d0 \ucee4\ub110 \uc138\uacc4\ub97c \ub2e4\ub140\uc628 \uac83\ub3c4 \ubaa8\ub978\ub2e4.',ustack:['main frame'],kstack:[],changed:['RIP']},
+];
+
+let cur = -1, autoId = null;
+const $ = id => document.getElementById(id);
+
+function renderCode(el, lines, prefix) {
+  el.innerHTML = lines.map((l, i) =>
+    '<div class="asm-line" id="' + prefix + i + '"><span class="ln">' + i + '</span><span class="code">' + l.code + ' <span class="cmt">' + l.cmt + '</span></span></div>'
+  ).join('');
+}
+renderCode($('userCode'), userLines, 'u');
+renderCode($('kernelCode'), kernelLines, 'k');
+
+$('regs').innerHTML = regNames.map(r =>
+  '<div class="reg-card" id="rc_' + r + '"><div class="rname">' + r + '</div><div class="rval" id="rv_' + r + '">\u2014</div></div>'
+).join('');
+
+function render() {
+  var s = steps[cur] || steps[0];
+  userLines.forEach(function(_, i) {
+    var el = $('u' + i);
+    el.classList.remove('active', 'kernel-active', 'done');
+    if (i === s.u) el.classList.add('active');
+    else if (i < s.u || (s.isKernel && i <= s.u)) el.classList.add('done');
+  });
+  kernelLines.forEach(function(_, i) {
+    var el = $('k' + i);
+    el.classList.remove('active', 'kernel-active', 'done');
+    if (i === s.k) el.classList.add('kernel-active');
+    else if (i >= 0 && i < s.k) el.classList.add('done');
+  });
+  var changed = s.changed || [];
+  regNames.forEach(function(r) {
+    var card = $('rc_' + r);
+    var val = $('rv_' + r);
+    val.innerHTML = s.regs[r] || '\u2014';
+    card.classList.toggle('changed', changed.indexOf(r) >= 0);
+  });
+  var mb = $('modeBadge');
+  var isK = s.regs.mode === 'kernel' || s.regs.mode === '<b>kernel</b>';
+  mb.className = 'mode-badge ' + (isK ? 'mode-kernel' : 'mode-user');
+  mb.innerHTML = isK ? 'ring 0 (kernel)' : 'ring 3 (user)';
+  if (s.regs.mode === '<b>TRAP!</b>') { mb.className = 'mode-badge mode-kernel'; mb.innerHTML = 'TRAP! mode switch...'; }
+  $('narration').innerHTML = s.narr;
+  $('stepInfo').textContent = 'step ' + (cur + 1) + ' / ' + steps.length;
+  $('userStack').innerHTML = (s.ustack || []).map(function(f) {
+    return '<div class="stack-frame user-f' + (s.isKernel ? ' inactive' : '') + '">' + f + '</div>';
+  }).join('');
+  $('kernelStack').innerHTML = (s.kstack || []).map(function(f) {
+    return '<div class="stack-frame kernel-f">' + f + '</div>';
+  }).join('');
+  $('stepBtn').disabled = cur >= steps.length - 1;
+  $('backBtn').disabled = cur <= 0;
+}
+
+function back() {
+  if (cur > 0) { cur--; render(); }
+}
+
+function step() {
+  if (cur < steps.length - 1) { cur++; render(); }
+  else if (autoId) { toggleAuto(); }
+}
+
+function reset() {
+  if (autoId) toggleAuto();
+  cur = 0; render();
+}
+
+function toggleAuto() {
+  if (autoId) {
+    clearInterval(autoId); autoId = null;
+    $('autoBtn').textContent = 'auto play';
+    $('autoLabel').textContent = '';
+  } else {
+    autoId = setInterval(function() {
+      if (cur >= steps.length - 1) { toggleAuto(); return; }
+      step();
+    }, 1400);
+    $('autoBtn').textContent = 'pause';
+    $('autoLabel').innerHTML = '<span class="auto-badge">playing</span>';
+  }
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.code === 'Space') { e.preventDefault(); step(); }
+  if (e.code === 'ArrowRight') { e.preventDefault(); step(); }
+  if (e.code === 'ArrowLeft') { e.preventDefault(); back(); }
+  if (e.code === 'KeyR') { reset(); }
+});
+
+cur = 0; render();
+</script>
+</body>
+</html>
