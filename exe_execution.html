@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>.exe 실행 과정 — 읽기/쓰기 동작으로 보는 OS 로딩</title>
+<style>
+:root {
+  --bg1:#ffffff;--bg2:#f5f5f0;--bg3:#eeeee8;
+  --t1:#1a1a1a;--t2:#6b6b66;--t3:#9c9a92;
+  --bd:rgba(0,0,0,0.1);--bd2:rgba(0,0,0,0.2);
+  --blue-50:#E6F1FB;--blue-600:#185FA5;--blue-800:#0C447C;
+  --red-50:#FCEBEB;--red-400:#E24B4A;--red-800:#791F1F;
+  --amber-50:#FAEEDA;--amber-600:#BA7517;--amber-800:#633806;
+  --teal-50:#E1F5EE;--teal-600:#0F6E56;--teal-800:#085041;
+  --coral-50:#FAECE7;--coral-600:#D85A30;--coral-800:#712B13;
+  --purple-50:#EEEDFE;--purple-600:#534AB7;--purple-800:#3C3489;
+  --gray-50:#F1EFE8;--gray-600:#5F5E5A;--gray-800:#444441;
+  --green-50:#EAF3DE;--green-800:#27500A;
+  --warn-bg:#FAEEDA;--warn-t:#633806;
+  --info-bg:#E6F1FB;--info-t:#0C447C;
+  --danger-bg:#FCEBEB;--danger-t:#791F1F;
+  --font-sans:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  --font-mono:'SF Mono','Cascadia Code','JetBrains Mono','Fira Code',Consolas,monospace;
+  --r:8px;--rl:12px;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg1:#1a1a1a;--bg2:#242422;--bg3:#2c2c2a;
+  --t1:#e8e6de;--t2:#9c9a92;--t3:#6b6b66;
+  --bd:rgba(255,255,255,0.1);--bd2:rgba(255,255,255,0.2);
+  --blue-50:#042C53;--blue-600:#85B7EB;--blue-800:#B5D4F4;
+  --red-50:#501313;--red-400:#F09595;--red-800:#F7C1C1;
+  --amber-50:#412402;--amber-600:#EF9F27;--amber-800:#FAC775;
+  --teal-50:#04342C;--teal-600:#5DCAA5;--teal-800:#9FE1CB;
+  --coral-50:#4A1B0C;--coral-600:#F0997B;--coral-800:#F5C4B3;
+  --purple-50:#26215C;--purple-600:#AFA9EC;--purple-800:#CECBF6;
+  --gray-50:#2C2C2A;--gray-600:#B4B2A9;--gray-800:#D3D1C7;
+  --green-50:#173404;--green-800:#C0DD97;
+  --warn-bg:#412402;--warn-t:#FAC775;
+  --info-bg:#042C53;--info-t:#B5D4F4;
+  --danger-bg:#501313;--danger-t:#F7C1C1;
+}}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans);background:var(--bg3);color:var(--t1);line-height:1.6;min-height:100vh;display:flex;justify-content:center;padding:2rem 1rem}
+.container{max-width:860px;width:100%}
+h1{font-size:20px;font-weight:500;margin-bottom:4px}
+.subtitle{font-size:14px;color:var(--t2);margin-bottom:1.5rem}
+.subtitle code{font-family:var(--font-mono);font-size:13px}
+.main-card{background:var(--bg1);border:0.5px solid var(--bd);border-radius:var(--rl);padding:1.5rem}
+.snav{display:flex;gap:4px;margin:0 0 1.2rem;flex-wrap:wrap}
+.sb{font-size:12px;padding:5px 12px;border-radius:var(--r);border:0.5px solid var(--bd);background:var(--bg1);color:var(--t2);cursor:pointer;transition:all .2s;font-family:var(--font-sans)}
+.sb:hover{border-color:var(--bd2);color:var(--t1)}
+.sb.on{background:var(--info-bg);color:var(--info-t);border-color:var(--blue-600);font-weight:500}
+.pan{display:none}.pan.on{display:block}
+.desc{font-size:14px;color:var(--t2);line-height:1.7;margin:0 0 1rem}
+.desc strong{color:var(--t1);font-weight:500}
+.desc code{font-family:var(--font-mono);font-size:12px;color:var(--t1);background:var(--bg3);padding:1px 5px;border-radius:4px}
+.rws{display:flex;gap:6px;margin:0 0 .8rem;flex-wrap:wrap}
+.rw{font-size:11px;padding:2px 8px;border-radius:var(--r);font-family:var(--font-mono);font-weight:600}
+.rR{background:var(--info-bg);color:var(--info-t)}
+.rW{background:var(--warn-bg);color:var(--warn-t)}
+.rF{background:var(--danger-bg);color:var(--danger-t)}
+.det{background:var(--bg2);border-radius:var(--rl);padding:1rem 1.25rem;margin:.8rem 0 0;font-size:13px;color:var(--t2);line-height:1.8}
+.det strong{color:var(--t1);font-weight:500}
+.det code{font-family:var(--font-mono);font-size:12px;color:var(--t1);background:var(--bg3);padding:1px 5px;border-radius:4px}
+.hex{font-family:var(--font-mono);font-size:12px;color:var(--info-t)}
+.svg-wrap{margin:.5rem 0}
+.svg-wrap svg{width:100%;height:auto;display:block}
+.svg-wrap svg text{font-family:var(--font-sans)}
+.svg-wrap svg .th{font-size:14px;font-weight:500;fill:var(--t1)}
+.svg-wrap svg .ts{font-size:12px;fill:var(--t2)}
+.svg-wrap svg .arr{stroke:var(--t3);stroke-width:1.5}
+.c-blue rect{fill:var(--blue-50);stroke:var(--blue-600)}
+.c-blue .th{fill:var(--blue-800)!important}.c-blue .ts{fill:var(--blue-600)!important}
+.c-red rect{fill:var(--red-50);stroke:var(--red-400)}
+.c-red .th{fill:var(--red-800)!important}.c-red .ts{fill:var(--red-400)!important}
+.c-amber rect{fill:var(--amber-50);stroke:var(--amber-600)}
+.c-amber .th{fill:var(--amber-800)!important}.c-amber .ts{fill:var(--amber-600)!important}
+.c-teal rect{fill:var(--teal-50);stroke:var(--teal-600)}
+.c-teal .th{fill:var(--teal-800)!important}.c-teal .ts{fill:var(--teal-600)!important}
+.c-coral rect{fill:var(--coral-50);stroke:var(--coral-600)}
+.c-coral .th{fill:var(--coral-800)!important}.c-coral .ts{fill:var(--coral-600)!important}
+.c-purple rect{fill:var(--purple-50);stroke:var(--purple-600)}
+.c-purple .th{fill:var(--purple-800)!important}.c-purple .ts{fill:var(--purple-600)!important}
+.c-gray rect{fill:var(--gray-50);stroke:var(--gray-600)}
+.c-gray .th{fill:var(--gray-800)!important}.c-gray .ts{fill:var(--gray-600)!important}
+.dots{display:flex;gap:5px;justify-content:center;margin:1.2rem 0 0}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--bd);transition:background .2s}
+.dot.on{background:var(--blue-600)}.dot.past{background:var(--bd2)}
+.nrow{display:flex;justify-content:space-between;align-items:center;margin:.8rem 0 0}
+.nb{font-size:13px;padding:7px 18px;border-radius:var(--r);border:0.5px solid var(--bd2);background:transparent;color:var(--t1);cursor:pointer;font-family:var(--font-sans);transition:all .15s}
+.nb:hover{background:var(--bg2)}
+.nb:active{transform:scale(.98)}
+.nb:disabled{opacity:.3;cursor:default}
+.kbd{font-family:var(--font-mono);font-size:10px;color:var(--t3);background:var(--bg2);border:0.5px solid var(--bd);padding:1px 5px;border-radius:3px;margin-left:4px}
+.footer{text-align:center;font-size:12px;color:var(--t3);margin-top:1.5rem}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>.exe 실행 과정 — 읽기/쓰기 동작의 관점</h1>
+  <p class="subtitle"><code>notepad.exe</code> (Windows 11)를 더블클릭했을 때 OS 내부에서 벌어지는 일</p>
+  <div class="main-card">
+    <div class="snav" id="nav"></div>
+    <div id="pans"></div>
+    <div class="dots" id="dots"></div>
+    <div class="nrow">
+      <button class="nb" id="pB" onclick="go(C-1)">&#8592; 이전 <span class="kbd">&#8592;</span></button>
+      <span style="font-size:12px;color:var(--t3)" id="ct"></span>
+      <button class="nb" id="nB" onclick="go(C+1)">다음 &#8594; <span class="kbd">&#8594;</span></button>
+    </div>
+  </div>
+  <p class="footer">&#8592;/&#8594; = 이전/다음 &middot; 강의용 인터랙티브 데모</p>
+</div>
+
+<script>
+var defined = '<marker id="aw" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>';
+
+var S = [
+{t:"1. PE 헤더 파싱",tags:["R"],
+desc:'더블클릭하면 OS가 <strong>notepad.exe의 첫 512바이트</strong>를 디스크에서 읽는다. 여기서 프로그램의 모든 구조 정보를 추출한다.',
+det:'<strong>실제 notepad.exe (Windows 11) 기준:</strong><br><br>\u2460 DOS Header (offset 0x00) \u2192 <code>4D 5A</code> ("MZ") 확인<br>\u2461 <code>e_lfanew</code> (offset 0x3C) = <code>0x00E8</code> \u2192 PE 시그니처 위치<br>\u2462 PE Signature (offset 0xE8) = <code>50 45 00 00</code> ("PE\\0\\0")<br>\u2463 Optional Header에서 추출:<br><br>\u2022 <code>ImageBase</code> = <span class="hex">0x00007FF7\'B4A50000</span> (선호 로드 주소)<br>\u2022 <code>SizeOfImage</code> = <span class="hex">0x00039000</span> (228KB 가상 공간 필요)<br>\u2022 <code>AddressOfEntryPoint</code> = <span class="hex">0x0001A4B0</span> (ImageBase + 이값 = 실행 시작점)<br>\u2022 <code>NumberOfSections</code> = 7<br><br>핵심: 이 모든 정보를 읽는 데 <strong>디스크 I/O 딱 1회</strong>. 파일 전체를 읽지 않는다.',
+svg:'<svg viewBox="0 0 680 190"><defs>'+defined+'</defs>'
++'<g class="c-gray"><rect x="40" y="40" width="160" height="110" rx="8" stroke-width="0.5"/><text class="th" x="120" y="68" text-anchor="middle" dominant-baseline="central">notepad.exe</text><text class="ts" x="120" y="88" text-anchor="middle" dominant-baseline="central">C:\\Windows\\</text><text class="ts" x="120" y="108" text-anchor="middle" dominant-baseline="central">228KB on disk</text></g>'
++'<line x1="200" y1="95" x2="278" y2="95" stroke="var(--blue-600)" stroke-width="1.5" marker-end="url(#aw)"/>'
++'<text class="ts" x="239" y="84" text-anchor="middle" fill="var(--blue-600)">READ 512B</text>'
++'<g class="c-blue"><rect x="280" y="40" width="170" height="110" rx="8" stroke-width="0.5"/><text class="th" x="365" y="65" text-anchor="middle" dominant-baseline="central">커널 메모리</text><text class="ts" x="365" y="85" text-anchor="middle" dominant-baseline="central">ImageBase parsed</text><text class="ts" x="365" y="105" text-anchor="middle" dominant-baseline="central">EntryPoint parsed</text><text class="ts" x="365" y="125" text-anchor="middle" dominant-baseline="central">7 sections found</text></g>'
++'<line x1="450" y1="95" x2="498" y2="95" stroke="var(--amber-600)" stroke-width="1.5" marker-end="url(#aw)"/>'
++'<text class="ts" x="474" y="84" text-anchor="middle" fill="var(--amber-600)">WRITE</text>'
++'<g class="c-amber"><rect x="500" y="55" width="140" height="80" rx="8" stroke-width="0.5"/><text class="th" x="570" y="82" text-anchor="middle" dominant-baseline="central">SECTION_OBJECT</text><text class="ts" x="570" y="102" text-anchor="middle" dominant-baseline="central">커널 구조체 생성</text></g>'
++'</svg>'},
+
+{t:"2. 주소 공간 생성",tags:["W"],
+desc:'새 프로세스를 위한 <strong>빈 가상 주소 공간</strong>을 만든다. 64비트 Windows는 프로세스당 128TB의 가상 공간을 부여한다. 이 시점에 물리 메모리는 0바이트 사용.',
+det:'<strong>커널이 하는 일:</strong><br><br>\u2460 <code>EPROCESS</code> 구조체 할당 (Write) \u2014 프로세스 관리 정보<br>\u2461 새 PML4 테이블 생성 (Write) \u2014 4단계 페이지 테이블의 최상위<br>\u2462 커널 영역(상위 절반) 복사 (Read \u2192 Write) \u2014 모든 프로세스가 공유<br>\u2463 유저 영역(하위 절반) = 완전히 비어있음<br><br><strong>구체적 예:</strong> notepad.exe의 유저 공간은 <span class="hex">0x00000000\'00000000</span> ~ <span class="hex">0x00007FFF\'FFFFFFFF</span> (128TB). 이 안에 코드, 데이터, 힙, 스택, DLL이 다 들어간다.',
+svg:'<svg viewBox="0 0 680 200"><defs>'+defined+'</defs>'
++'<g class="c-purple"><rect x="140" y="20" width="400" height="160" rx="16" stroke-width="0.5"/><text class="th" x="340" y="46" text-anchor="middle" dominant-baseline="central">가상 주소 공간 (128TB)</text></g>'
++'<g class="c-gray"><rect x="165" y="62" width="350" height="40" rx="6" stroke-width="0.5"/><text class="th" x="340" y="82" text-anchor="middle" dominant-baseline="central">커널 영역 (모든 프로세스 공유)</text></g>'
++'<rect x="165" y="115" width="350" height="44" rx="6" fill="none" stroke="var(--bd)" stroke-width="0.5" stroke-dasharray="4 3"/>'
++'<text class="ts" x="250" y="137" text-anchor="middle" dominant-baseline="central">유저 영역 (비어있음)</text>'
++'<text class="ts" x="480" y="137" text-anchor="start" dominant-baseline="central">\u2190 다음 단계에서 매핑</text>'
++'</svg>'},
+
+{t:"3. 섹션 매핑",tags:["W"],
+desc:'notepad.exe의 7개 섹션을 가상 주소에 <strong>매핑만</strong> 한다. 실제 데이터 복사는 0바이트. "여기는 디스크의 저기에 해당한다"는 약속만 기록한다.',
+det:'<strong>notepad.exe의 실제 섹션 테이블:</strong><br><br><code>.text&nbsp;&nbsp;</code> RVA <span class="hex">0x1000</span>&nbsp; Size <span class="hex">0x1A800</span>&nbsp; R-X&nbsp; (실행 코드)<br><code>.rdata </code> RVA <span class="hex">0x1C000</span> Size <span class="hex">0xC200</span>&nbsp;&nbsp; R--&nbsp; (상수, import 정보)<br><code>.data&nbsp;&nbsp;</code> RVA <span class="hex">0x29000</span> Size <span class="hex">0x1400</span>&nbsp;&nbsp; RW-&nbsp; (전역 변수)<br><code>.pdata </code> RVA <span class="hex">0x2B000</span> Size <span class="hex">0x1800</span>&nbsp;&nbsp; R--&nbsp; (예외 처리 정보)<br><code>.didat </code> RVA <span class="hex">0x2D000</span> Size <span class="hex">0x200</span>&nbsp;&nbsp;&nbsp; RW-&nbsp; (delay import)<br><code>.rsrc&nbsp;&nbsp;</code> RVA <span class="hex">0x2E000</span> Size <span class="hex">0xA800</span>&nbsp;&nbsp; R--&nbsp; (리소스: 아이콘, 문자열)<br><code>.reloc </code> RVA <span class="hex">0x39000</span> Size <span class="hex">0x600</span>&nbsp;&nbsp;&nbsp; R--&nbsp; (재배치 테이블)<br><br>각 섹션마다 VAD(Virtual Address Descriptor)를 생성하고, <strong>PTE의 Present 비트 = 0</strong>으로 설정. 즉, 물리 메모리에는 아직 아무것도 없다.',
+svg:'<svg viewBox="0 0 680 260"><defs>'+defined+'</defs>'
++'<text class="th" x="100" y="24" text-anchor="middle">디스크 (notepad.exe)</text>'
++'<g class="c-teal"><rect x="40" y="38" width="120" height="30" rx="4" stroke-width="0.5"/><text class="ts" x="100" y="53" text-anchor="middle" dominant-baseline="central">.text (106KB)</text></g>'
++'<g class="c-coral"><rect x="40" y="74" width="120" height="30" rx="4" stroke-width="0.5"/><text class="ts" x="100" y="89" text-anchor="middle" dominant-baseline="central">.rdata (48KB)</text></g>'
++'<g class="c-purple"><rect x="40" y="110" width="120" height="30" rx="4" stroke-width="0.5"/><text class="ts" x="100" y="125" text-anchor="middle" dominant-baseline="central">.data (5KB)</text></g>'
++'<g class="c-gray"><rect x="40" y="146" width="120" height="30" rx="4" stroke-width="0.5"/><text class="ts" x="100" y="161" text-anchor="middle" dominant-baseline="central">.rsrc (42KB)</text></g>'
++'<text class="th" x="480" y="24" text-anchor="middle">가상 주소 공간</text>'
++'<g class="c-teal"><rect x="370" y="38" width="220" height="30" rx="4" stroke-width="0.5"/><text class="ts" x="480" y="53" text-anchor="middle" dominant-baseline="central">0x7FF7B4A51000 R-X</text></g>'
++'<g class="c-coral"><rect x="370" y="74" width="220" height="30" rx="4" stroke-width="0.5"/><text class="ts" x="480" y="89" text-anchor="middle" dominant-baseline="central">0x7FF7B4A6C000 R--</text></g>'
++'<g class="c-purple"><rect x="370" y="110" width="220" height="30" rx="4" stroke-width="0.5"/><text class="ts" x="480" y="125" text-anchor="middle" dominant-baseline="central">0x7FF7B4A79000 RW-</text></g>'
++'<g class="c-gray"><rect x="370" y="146" width="220" height="30" rx="4" stroke-width="0.5"/><text class="ts" x="480" y="161" text-anchor="middle" dominant-baseline="central">0x7FF7B4A7E000 R--</text></g>'
++'<path d="M160 53 L368 53" fill="none" stroke="var(--teal-600)" stroke-width="1" stroke-dasharray="5 4"/>'
++'<path d="M160 89 L368 89" fill="none" stroke="var(--coral-600)" stroke-width="1" stroke-dasharray="5 4"/>'
++'<path d="M160 125 L368 125" fill="none" stroke="var(--purple-600)" stroke-width="1" stroke-dasharray="5 4"/>'
++'<path d="M160 161 L368 161" fill="none" stroke="var(--gray-600)" stroke-width="1" stroke-dasharray="5 4"/>'
++'<text class="ts" x="265" y="42" text-anchor="middle" fill="var(--t3)">매핑 (복사 아님!)</text>'
++'<g class="c-red"><rect x="220" y="210" width="240" height="34" rx="6" stroke-width="0.5"/><text class="th" x="340" y="227" text-anchor="middle" dominant-baseline="central">PTE: Present = 0</text></g>'
++'<text class="ts" x="480" y="227" text-anchor="start" dominant-baseline="central" fill="var(--t3)">\u2190 물리 메모리에 없음!</text>'
++'</svg>'},
+
+{t:"4. DLL 로드 & IAT",tags:["R","W"],
+desc:'notepad.exe의 Import Table을 읽어 <strong>필요한 DLL 11개</strong>를 찾고, 각 DLL의 함수 주소를 IAT에 기록한다. 프로그램이 <code>CreateFileW()</code>를 호출하면 IAT를 거쳐 실제 주소로 점프한다.',
+det:'<strong>notepad.exe가 import하는 주요 DLL:</strong><br><br>\u2022 <code>KERNEL32.dll</code> \u2014 CreateFileW, ReadFile, WriteFile, CloseHandle...<br>\u2022 <code>USER32.dll</code> \u2014 CreateWindowExW, SendMessageW, GetMessageW...<br>\u2022 <code>GDI32.dll</code> \u2014 그리기 관련<br>\u2022 <code>COMCTL32.dll</code> \u2014 커먼 컨트롤<br>\u2022 <code>ADVAPI32.dll</code>, <code>SHELL32.dll</code>, <code>ole32.dll</code> 등 총 11개<br><br><strong>IAT 바인딩 예시 (kernel32.dll):</strong><br><br>1. 로더가 kernel32.dll의 Export Table에서 <code>CreateFileW</code> 검색 (Read)<br>2. 실제 주소 <span class="hex">0x7FFE1234ABCD</span> 확인<br>3. notepad.exe의 IAT 슬롯에 이 주소 기록 (Write)<br><br>실행 시: <code>call [IAT+0x48]</code> \u2192 <span class="hex">0x7FFE1234ABCD</span> (간접 점프)',
+svg:'<svg viewBox="0 0 680 220"><defs>'+defined+'</defs>'
++'<g class="c-teal"><rect x="40" y="30" width="140" height="56" rx="8" stroke-width="0.5"/><text class="th" x="110" y="50" text-anchor="middle" dominant-baseline="central">kernel32.dll</text><text class="ts" x="110" y="68" text-anchor="middle" dominant-baseline="central">Export Table</text></g>'
++'<line x1="180" y1="58" x2="248" y2="58" stroke="var(--blue-600)" stroke-width="1.5" marker-end="url(#aw)"/>'
++'<text class="ts" x="214" y="48" text-anchor="middle" fill="var(--blue-600)">READ</text>'
++'<g class="c-purple"><rect x="250" y="20" width="180" height="76" rx="8" stroke-width="0.5"/><text class="th" x="340" y="45" text-anchor="middle" dominant-baseline="central">로더 (ntdll.dll)</text><text class="ts" x="340" y="65" text-anchor="middle" dominant-baseline="central">CreateFileW 주소 확인</text></g>'
++'<line x1="430" y1="58" x2="478" y2="58" stroke="var(--amber-600)" stroke-width="1.5" marker-end="url(#aw)"/>'
++'<text class="ts" x="454" y="48" text-anchor="middle" fill="var(--amber-600)">WRITE</text>'
++'<g class="c-amber"><rect x="480" y="20" width="160" height="76" rx="8" stroke-width="0.5"/><text class="th" x="560" y="45" text-anchor="middle" dominant-baseline="central">notepad IAT</text><text class="ts" x="560" y="65" text-anchor="middle" dominant-baseline="central">[slot] = 0x7FFE...</text></g>'
++'<g class="c-gray"><rect x="160" y="130" width="380" height="70" rx="8" stroke-width="0.5"/><text class="th" x="350" y="153" text-anchor="middle" dominant-baseline="central">실행 시 간접 점프 흐름</text><text class="ts" x="350" y="173" text-anchor="middle" dominant-baseline="central">call [IAT+0x48] \u2192 Read 주소 \u2192 jmp CreateFileW</text></g>'
++'<line x1="560" y1="96" x2="560" y2="128" stroke="var(--bd2)" stroke-width="0.5" stroke-dasharray="4 3"/>'
++'</svg>'},
+
+{t:"5. 스레드 & 실행",tags:["W","R"],
+desc:'스택을 할당하고, CPU의 <strong>RIP를 엔트리포인트</strong>로 설정한다. 첫 명령어 페치가 일어나는 순간 \u2014 이게 6단계의 트리거가 된다.',
+det:'<strong>커널이 하는 일:</strong><br><br>\u2460 <code>ETHREAD</code> 생성 (Write)<br>\u2461 유저 모드 스택 할당 (Write) \u2014 기본 1MB 예약<br>\u2462 CONTEXT 초기화 (Write):<br>&nbsp;&nbsp;\u2022 <code>RIP</code> = ntdll!LdrInitializeThunk \u2192 최종적으로 <span class="hex">0x7FF7B4A6A4B0</span> (EntryPoint)<br>&nbsp;&nbsp;\u2022 <code>RSP</code> = 스택 최상단<br>&nbsp;&nbsp;\u2022 기타 레지스터 = 0<br>\u2463 스케줄러가 Ready 큐에 삽입<br>\u2464 CPU 코어 배정 \u2192 컨텍스트 스위치 \u2192 <strong>첫 명령어 Fetch!</strong><br><br>이 Fetch가 바로 Page Fault를 트리거한다 (다음 단계).',
+svg:'<svg viewBox="0 0 680 170"><defs>'+defined+'</defs>'
++'<g class="c-purple"><rect x="40" y="40" width="130" height="80" rx="8" stroke-width="0.5"/><text class="th" x="105" y="68" text-anchor="middle" dominant-baseline="central">CONTEXT</text><text class="ts" x="105" y="88" text-anchor="middle" dominant-baseline="central">RIP=0x...A4B0</text></g>'
++'<line x1="170" y1="80" x2="238" y2="80" stroke="var(--amber-600)" stroke-width="1.5" marker-end="url(#aw)"/>'
++'<text class="ts" x="204" y="70" text-anchor="middle" fill="var(--amber-600)">WRITE</text>'
++'<g class="c-teal"><rect x="240" y="40" width="160" height="80" rx="8" stroke-width="0.5"/><text class="th" x="320" y="68" text-anchor="middle" dominant-baseline="central">스케줄러</text><text class="ts" x="320" y="88" text-anchor="middle" dominant-baseline="central">Ready \u2192 Running</text></g>'
++'<line x1="400" y1="80" x2="458" y2="80" stroke="var(--blue-600)" stroke-width="1.5" marker-end="url(#aw)"/>'
++'<text class="ts" x="429" y="70" text-anchor="middle" fill="var(--blue-600)">FETCH</text>'
++'<g class="c-blue"><rect x="460" y="40" width="180" height="80" rx="8" stroke-width="0.5"/><text class="th" x="550" y="65" text-anchor="middle" dominant-baseline="central">CPU</text><text class="ts" x="550" y="85" text-anchor="middle" dominant-baseline="central">첫 명령어 Read 시도</text></g>'
++'</svg>'},
+
+{t:"6. Page Fault",tags:["F","R","W"],
+desc:'CPU가 <span class="hex">0x7FF7B4A51000</span>(.text 첫 페이지)에 접근하는데 <strong>PTE Present=0</strong>이니까 #PF 발생. OS가 디스크에서 4KB를 읽어오고, 같은 명령어를 재시도한다.',
+det:'<strong>구체적 시나리오:</strong><br><br>\u2460 CPU가 가상 주소 <span class="hex">0x7FF7B4A51000</span>에 명령어 Fetch 시도<br>\u2461 MMU가 PTE 확인 \u2192 Present=0 \u2192 <strong>#PF 예외</strong><br>\u2462 커널의 <code>MmAccessFault</code> 호출<br>\u2463 VAD 트리 조회 \u2192 "이 주소는 notepad.exe .text 섹션, 파일 오프셋 0x400" (Read)<br>\u2464 물리 페이지 프레임 할당 (예: 프레임 #58201)<br>\u2465 디스크에서 notepad.exe 오프셋 0x400부터 4096바이트 <strong>Read</strong><br>\u2466 프레임 #58201에 데이터 <strong>Write</strong><br>\u2467 PTE 업데이트 (Write): Present=1, 프레임=58201, R-X 권한<br>\u2468 CPU가 <strong>같은 명령어를 재시도</strong> \u2192 이번엔 성공!<br><br><strong>핵심:</strong> notepad.exe가 228KB이지만, 사용자가 메모장 열고 타이핑하는 동안 실제로 사용되는 코드는 전체의 일부만. 미리 다 읽으면 낭비다.',
+svg:'<svg viewBox="0 0 680 300"><defs>'+defined+'</defs>'
++'<g class="c-blue"><rect x="40" y="20" width="130" height="56" rx="8" stroke-width="0.5"/><text class="th" x="105" y="40" text-anchor="middle" dominant-baseline="central">CPU</text><text class="ts" x="105" y="58" text-anchor="middle" dominant-baseline="central">Fetch 0x...1000</text></g>'
++'<line x1="170" y1="48" x2="228" y2="48" stroke="var(--red-400)" stroke-width="1.5" marker-end="url(#aw)"/>'
++'<text class="ts" x="199" y="38" text-anchor="middle" fill="var(--red-400)">#PF!</text>'
++'<g class="c-red"><rect x="230" y="20" width="170" height="56" rx="8" stroke-width="0.5"/><text class="th" x="315" y="40" text-anchor="middle" dominant-baseline="central">Page fault</text><text class="ts" x="315" y="58" text-anchor="middle" dominant-baseline="central">Present=0 in PTE</text></g>'
++'<line x1="315" y1="76" x2="315" y2="108" stroke="var(--red-400)" stroke-width="1" marker-end="url(#aw)"/>'
++'<g class="c-purple"><rect x="225" y="110" width="180" height="56" rx="8" stroke-width="0.5"/><text class="th" x="315" y="130" text-anchor="middle" dominant-baseline="central">MmAccessFault</text><text class="ts" x="315" y="148" text-anchor="middle" dominant-baseline="central">VAD 조회, 프레임 할당</text></g>'
++'<line x1="315" y1="166" x2="315" y2="198" stroke="var(--teal-600)" stroke-width="1" marker-end="url(#aw)"/>'
++'<g class="c-gray"><rect x="60" y="200" width="160" height="56" rx="8" stroke-width="0.5"/><text class="th" x="140" y="220" text-anchor="middle" dominant-baseline="central">디스크</text><text class="ts" x="140" y="238" text-anchor="middle" dominant-baseline="central">offset 0x400, 4KB</text></g>'
++'<line x1="220" y1="228" x2="288" y2="228" stroke="var(--blue-600)" stroke-width="1.5" marker-end="url(#aw)"/>'
++'<text class="ts" x="254" y="218" text-anchor="middle" fill="var(--blue-600)">READ</text>'
++'<g class="c-teal"><rect x="290" y="200" width="160" height="56" rx="8" stroke-width="0.5"/><text class="th" x="370" y="220" text-anchor="middle" dominant-baseline="central">RAM 프레임 #58201</text><text class="ts" x="370" y="238" text-anchor="middle" dominant-baseline="central">4KB 데이터 적재</text></g>'
++'<line x1="450" y1="228" x2="498" y2="228" stroke="var(--amber-600)" stroke-width="1.5" marker-end="url(#aw)"/>'
++'<text class="ts" x="474" y="218" text-anchor="middle" fill="var(--amber-600)">WRITE</text>'
++'<g class="c-amber"><rect x="500" y="200" width="140" height="56" rx="8" stroke-width="0.5"/><text class="th" x="570" y="220" text-anchor="middle" dominant-baseline="central">PTE 갱신</text><text class="ts" x="570" y="238" text-anchor="middle" dominant-baseline="central">Present=1!</text></g>'
++'<path d="M570 200 Q570 140 500 100 Q460 75 420 48 L402 48" fill="none" stroke="var(--teal-600)" stroke-width="1" stroke-dasharray="5 3"/>'
++'<text class="ts" x="520" y="110" text-anchor="start" fill="var(--teal-600)">재시도 \u2192 성공!</text>'
++'</svg>'},
+
+{t:"7. Copy-on-Write",tags:["F","R","W"],
+desc:'notepad.exe를 2개 열면? 같은 .text 페이지를 <strong>물리 메모리에서 공유</strong>한다. .data에 쓰기를 하면 그제야 복사한다.',
+det:'<strong>구체적 시나리오:</strong><br><br>notepad.exe 프로세스 A와 B가 동시에 떠있다고 하자.<br><br>\u2022 <code>.text</code> (R-X, 코드) \u2192 둘 다 <strong>같은 물리 페이지</strong>를 가리킴. 코드는 읽기전용이니까 문제없음.<br>\u2022 <code>.data</code> (RW-, 변수) \u2192 처음엔 PAGE_WRITECOPY로 공유<br><br><strong>A가 전역 변수에 Write 시도:</strong><br><br>\u2460 Page Fault 발생 (CoW 트리거)<br>\u2461 커널이 원본 페이지 Read \u2192 새 프레임에 Write (복사)<br>\u2462 A의 PTE만 새 프레임으로 변경 (Write)<br>\u2463 B는 여전히 원본 공유 중<br><br><strong>결과:</strong> RAM에 notepad.exe의 .text는 1부만 있고 (2개 프로세스가 공유), .data는 각자 별도. 메모리 절약 + 프로세스 격리 동시 달성.',
+svg:'<svg viewBox="0 0 680 220"><defs>'+defined+'</defs>'
++'<g class="c-blue"><rect x="40" y="25" width="130" height="40" rx="6" stroke-width="0.5"/><text class="th" x="105" y="45" text-anchor="middle" dominant-baseline="central">notepad A</text></g>'
++'<g class="c-teal"><rect x="40" y="80" width="130" height="40" rx="6" stroke-width="0.5"/><text class="th" x="105" y="100" text-anchor="middle" dominant-baseline="central">notepad B</text></g>'
++'<g class="c-gray"><rect x="260" y="45" width="160" height="50" rx="8" stroke-width="0.5"/><text class="th" x="340" y="62" text-anchor="middle" dominant-baseline="central">공유 .data 페이지</text><text class="ts" x="340" y="80" text-anchor="middle" dominant-baseline="central">물리 프레임 #7320</text></g>'
++'<line x1="170" y1="45" x2="258" y2="62" stroke="var(--bd2)" stroke-width="0.5"/>'
++'<line x1="170" y1="100" x2="258" y2="82" stroke="var(--bd2)" stroke-width="0.5"/>'
++'<text class="ts" x="340" y="120" text-anchor="middle" fill="var(--red-400)">A가 .data에 Write \u2192 #PF (CoW)</text>'
++'<line x1="340" y1="128" x2="340" y2="148" stroke="var(--red-400)" stroke-width="1" marker-end="url(#aw)"/>'
++'<g class="c-coral"><rect x="160" y="152" width="140" height="50" rx="8" stroke-width="0.5"/><text class="th" x="230" y="170" text-anchor="middle" dominant-baseline="central">복사본 (A용)</text><text class="ts" x="230" y="188" text-anchor="middle" dominant-baseline="central">프레임 #91455</text></g>'
++'<g class="c-gray"><rect x="380" y="152" width="140" height="50" rx="8" stroke-width="0.5"/><text class="th" x="450" y="170" text-anchor="middle" dominant-baseline="central">원본 (B 유지)</text><text class="ts" x="450" y="188" text-anchor="middle" dominant-baseline="central">프레임 #7320</text></g>'
++'<line x1="105" y1="65" x2="158" y2="170" stroke="var(--coral-600)" stroke-width="1" stroke-dasharray="4 3"/>'
++'<line x1="105" y1="120" x2="378" y2="175" stroke="var(--bd2)" stroke-width="0.5"/>'
++'<text class="ts" x="570" y="177" text-anchor="start" fill="var(--teal-600)">격리 완료!</text>'
++'</svg>'}
+];
+
+var C = 0;
+function $(id) { return document.getElementById(id); }
+
+var nav = $('nav'), pans = $('pans'), dots = $('dots');
+
+S.forEach(function(s, i) {
+  var b = document.createElement('button');
+  b.className = 'sb'; b.textContent = s.t;
+  b.onclick = function() { go(i); };
+  nav.appendChild(b);
+
+  var p = document.createElement('div');
+  p.className = 'pan';
+  var th = s.tags.map(function(t) {
+    var c = t === 'R' ? 'rR' : t === 'W' ? 'rW' : 'rF';
+    var l = t === 'R' ? 'READ' : t === 'W' ? 'WRITE' : 'PAGE FAULT';
+    return '<span class="rw ' + c + '">' + l + '</span>';
+  }).join('');
+  p.innerHTML = '<div class="rws">' + th + '</div>'
+    + '<div class="desc">' + s.desc + '</div>'
+    + '<div class="svg-wrap">' + s.svg + '</div>'
+    + '<div class="det">' + s.det + '</div>';
+  pans.appendChild(p);
+
+  var d = document.createElement('div');
+  d.className = 'dot';
+  dots.appendChild(d);
+});
+
+function go(i) {
+  if (i < 0 || i >= S.length) return;
+  C = i;
+  var btns = document.querySelectorAll('.sb');
+  var panels = document.querySelectorAll('.pan');
+  var ds = document.querySelectorAll('.dot');
+  for (var j = 0; j < S.length; j++) {
+    btns[j].className = j === i ? 'sb on' : 'sb';
+    panels[j].className = j === i ? 'pan on' : 'pan';
+    ds[j].className = j === i ? 'dot on' : (j < i ? 'dot past' : 'dot');
+  }
+  $('pB').disabled = i === 0;
+  $('nB').disabled = i === S.length - 1;
+  $('ct').textContent = (i + 1) + ' / ' + S.length;
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.code === 'ArrowLeft') { e.preventDefault(); go(C - 1); }
+  if (e.code === 'ArrowRight') { e.preventDefault(); go(C + 1); }
+});
+
+go(0);
+</script>
+</body>
+</html>
