@@ -162,7 +162,37 @@ h1 {
   border-radius: var(--radius);
   padding: 6px 10px;
   transition: all 0.4s;
+  position: relative;
 }
+.reg-card.has-tip { cursor: help; }
+.reg-card:not(.has-tip) .reg-tip { display: none !important; }
+.reg-card .reg-tip {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text-primary);
+  color: var(--bg-primary);
+  font-size: 11px;
+  font-family: var(--font-sans);
+  padding: 6px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+  z-index: 10;
+  pointer-events: none;
+  line-height: 1.4;
+}
+.reg-card .reg-tip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--text-primary);
+}
+.reg-card.has-tip:hover .reg-tip { display: block; }
 .reg-card.changed { outline: 2px solid var(--red-400); outline-offset: -2px; }
 .reg-card .rname { font-family: var(--font-mono); font-size: 10px; color: var(--text-tertiary); text-transform: uppercase; }
 .reg-card .rval { font-family: var(--font-mono); font-size: 13px; font-weight: 600; color: var(--text-primary); margin-top: 1px; transition: color 0.3s; }
@@ -329,6 +359,15 @@ const kernelLines=[
 ];
 
 const regNames=['RAX','RCX','RDX','RSI','RDI','RSP','RIP','mode'];
+const regDesc={
+  RAX:'누산기 / syscall 번호 & 리턴값',
+  RCX:'syscall 시 CPU가 복귀 RIP 저장',
+  RDX:'3번째 인자 (count/length)',
+  RSI:'2번째 인자 (source/buffer 주소)',
+  RDI:'1번째 인자 (fd 등 대상)',
+  RSP:'스택 포인터 — 현재 스택 꼭대기',
+  RIP:'명령어 포인터 — 다음 실행 주소',
+};
 
 const steps=[
 {u:0,k:-1,regs:{RAX:'\u2014',RCX:'\u2014',RDX:'\u2014',RSI:'\u2014',RDI:'\u2014',RSP:'0x7fff1000',RIP:'0x401000',mode:'user'},
@@ -385,7 +424,9 @@ renderCode($('userCode'), userLines, 'u');
 renderCode($('kernelCode'), kernelLines, 'k');
 
 $('regs').innerHTML = regNames.map(r =>
-  '<div class="reg-card" id="rc_' + r + '"><div class="rname">' + r + '</div><div class="rval" id="rv_' + r + '">\u2014</div></div>'
+  '<div class="reg-card' + (regDesc[r] ? ' has-tip' : '') + '" id="rc_' + r + '">' +
+  (regDesc[r] ? '<span class="reg-tip">' + regDesc[r] + '</span>' : '') +
+  '<div class="rname">' + r + '</div><div class="rval" id="rv_' + r + '">\u2014</div></div>'
 ).join('');
 
 function render() {
