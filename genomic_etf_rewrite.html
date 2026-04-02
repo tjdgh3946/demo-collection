@@ -1,0 +1,1579 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Genomic ETF — 유전자 ETF 개념 정리</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700;900&family=IBM+Plex+Sans+KR:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Playfair+Display:ital,wght@0,700;0,900;1,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+
+  :root {
+    --paper: #FAF7F2;
+    --paper-deep: #F3EDE4;
+    --ink: #1A1A1A;
+    --ink-light: #4A4A4A;
+    --ink-muted: #8A8580;
+    --accent: #8B2500;
+    --accent-light: #C4512A;
+    --accent-pale: rgba(139,37,0,0.06);
+    --gold: #B8860B;
+    --gold-pale: rgba(184,134,11,0.08);
+    --rule: #D4CDC4;
+    --chapter-bg: #2C1810;
+    --chapter-text: #F0E8DC;
+    --serif: 'Noto Serif KR', 'Georgia', serif;
+    --sans: 'IBM Plex Sans KR', 'Helvetica Neue', sans-serif;
+    --mono: 'IBM Plex Mono', 'Consolas', monospace;
+    --display: 'Playfair Display', 'Noto Serif KR', serif;
+    --max-width: 720px;
+    --gutter: clamp(1.5rem, 5vw, 4rem);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; font-size: 17px; }
+
+  @media (max-width: 600px) { html { font-size: 15px; } }
+
+  body {
+    font-family: var(--serif);
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.85;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* ── COVER ── */
+  .cover {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    background: var(--chapter-bg);
+    color: var(--chapter-text);
+    padding: 3rem var(--gutter);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cover::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 50% 40%, rgba(139,37,0,0.15), transparent),
+      radial-gradient(ellipse 50% 80% at 80% 20%, rgba(184,134,11,0.1), transparent);
+    pointer-events: none;
+  }
+
+  .cover::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.65' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+  }
+
+  .cover-label {
+    font-family: var(--sans);
+    font-weight: 500;
+    font-size: 0.75rem;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 2.5rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .cover-title {
+    font-family: var(--display);
+    font-weight: 900;
+    font-size: clamp(3rem, 8vw, 5.5rem);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    margin-bottom: 1rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .cover-title em {
+    font-style: italic;
+    color: var(--accent-light);
+  }
+
+  .cover-subtitle {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: clamp(1.1rem, 2.5vw, 1.45rem);
+    color: rgba(240,232,220,0.7);
+    max-width: 520px;
+    margin-bottom: 3rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .cover-ornament {
+    width: 60px;
+    height: 1px;
+    background: var(--gold);
+    margin-bottom: 2rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .cover-meta {
+    font-family: var(--sans);
+    font-size: 0.8rem;
+    letter-spacing: 0.15em;
+    color: rgba(240,232,220,0.4);
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── TOC ── */
+  .toc {
+    max-width: var(--max-width);
+    margin: 0 auto;
+    padding: 5rem var(--gutter) 4rem;
+  }
+
+  .toc-heading {
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 0.7rem;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 2rem;
+  }
+
+  .toc-list {
+    list-style: none;
+    counter-reset: toc-counter;
+  }
+
+  .toc-list li {
+    counter-increment: toc-counter;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .toc-list li a {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    padding: 0.85rem 0;
+    text-decoration: none;
+    color: var(--ink);
+    transition: color 0.2s;
+  }
+
+  .toc-list li a:hover { color: var(--accent); }
+
+  .toc-list li a::before {
+    content: counter(toc-counter, decimal-leading-zero);
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--ink-muted);
+    flex-shrink: 0;
+    min-width: 1.6rem;
+  }
+
+  .toc-list li a .toc-title {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 1.05rem;
+  }
+
+  .toc-list li a .toc-dots {
+    flex: 1;
+    border-bottom: 1px dotted var(--rule);
+    margin-bottom: 0.35em;
+  }
+
+  .toc-list li a .toc-page {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--ink-muted);
+    flex-shrink: 0;
+  }
+
+  /* ── CONTENT WRAPPER ── */
+  .content {
+    max-width: var(--max-width);
+    margin: 0 auto;
+    padding: 0 var(--gutter) 10rem;
+  }
+
+  /* ── CHAPTERS ── */
+  .chapter {
+    margin-top: 5rem;
+    padding-top: 3rem;
+    border-top: 3px solid var(--ink);
+    animation: fadeUp 0.6s ease-out both;
+    scroll-margin-top: 1.5rem;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .chapter-number {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--accent);
+    display: block;
+    margin-bottom: 0.6rem;
+  }
+
+  .chapter h2 {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: clamp(1.8rem, 4vw, 2.5rem);
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    margin-bottom: 2rem;
+  }
+
+  .chapter h3 {
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 1.15rem;
+    color: var(--ink);
+    margin-top: 2.5rem;
+    margin-bottom: 1rem;
+    padding-left: 1rem;
+    border-left: 3px solid var(--accent);
+  }
+
+  .chapter h4 {
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--ink-light);
+    margin-top: 2rem;
+    margin-bottom: 0.8rem;
+    letter-spacing: 0.02em;
+  }
+
+  /* ── PROSE ── */
+  .chapter p {
+    margin-bottom: 1.3rem;
+    color: var(--ink-light);
+    text-align: justify;
+    word-break: keep-all;
+  }
+
+  .chapter p strong {
+    color: var(--ink);
+    font-weight: 700;
+  }
+
+  .lead-text {
+    font-size: 1.15rem;
+    line-height: 1.95;
+    color: var(--ink) !important;
+    text-align: left !important;
+  }
+
+  /* ── BLOCKQUOTE (PULL-QUOTE) ── */
+  .chapter blockquote {
+    margin: 2.5rem 0;
+    padding: 2rem 2.2rem;
+    background: var(--accent-pale);
+    border-left: 4px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    position: relative;
+  }
+
+  .chapter blockquote p {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 1.05rem;
+    line-height: 1.75;
+    color: var(--ink) !important;
+    text-align: left !important;
+    margin-bottom: 0;
+  }
+
+  .chapter blockquote::before {
+    content: '"';
+    position: absolute;
+    top: -0.2rem;
+    left: 0.8rem;
+    font-family: var(--display);
+    font-size: 3.5rem;
+    color: var(--accent);
+    opacity: 0.2;
+    line-height: 1;
+  }
+
+  /* ── LISTS ── */
+  .chapter ul, .chapter ol {
+    margin: 1rem 0 1.5rem 0;
+    padding-left: 1.5rem;
+    color: var(--ink-light);
+  }
+
+  .chapter ul { list-style: none; padding-left: 0; }
+
+  .chapter ul li {
+    padding: 0.35rem 0 0.35rem 1.6rem;
+    position: relative;
+  }
+
+  .chapter ul li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.85em;
+    width: 6px;
+    height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+  }
+
+  .chapter ol li {
+    padding: 0.3rem 0;
+  }
+
+  .chapter ul li strong, .chapter ol li strong {
+    color: var(--ink);
+  }
+
+  /* ── MATH ── */
+  .math-block {
+    margin: 2rem 0;
+    padding: 1.5rem 2rem;
+    background: var(--gold-pale);
+    border: 1px solid rgba(184,134,11,0.15);
+    border-radius: 6px;
+    overflow-x: auto;
+    text-align: center;
+  }
+
+  .math-inline .katex { font-size: 0.95em; }
+
+  /* ── INFO CARDS ── */
+  .card-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin: 1.5rem 0;
+  }
+
+  @media (max-width: 600px) { .card-grid { grid-template-columns: 1fr; } }
+
+  .card {
+    padding: 1.2rem 1.4rem;
+    background: white;
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+
+  .card-label {
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 0.6rem;
+  }
+
+  .card-label.negative { color: #b33; }
+  .card-label.positive { color: #2a7d3f; }
+
+  .card ul { margin: 0; }
+  .card ul li { font-size: 0.9rem; padding: 0.2rem 0 0.2rem 1.4rem; }
+  .card ul li::before { width: 5px; height: 5px; }
+
+  /* ── STRUCTURE DIAGRAM ── */
+  .structure-flow {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.8rem;
+    margin: 2rem 0;
+  }
+
+  @media (max-width: 600px) { .structure-flow { grid-template-columns: 1fr 1fr; } }
+
+  .structure-node {
+    padding: 1.2rem 1rem;
+    background: white;
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    text-align: center;
+    position: relative;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+  }
+
+  .structure-node .node-number {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--accent);
+    letter-spacing: 0.15em;
+    display: block;
+    margin-bottom: 0.3rem;
+  }
+
+  .structure-node .node-title {
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--ink);
+    margin-bottom: 0.3rem;
+  }
+
+  .structure-node .node-en {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--ink-muted);
+  }
+
+  /* ── TIMELINE ── */
+  .timeline {
+    margin: 2rem 0;
+    position: relative;
+    padding-left: 2.5rem;
+  }
+
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 0.5rem;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--accent), var(--gold));
+  }
+
+  .timeline-phase {
+    position: relative;
+    margin-bottom: 2.5rem;
+  }
+
+  .timeline-phase::before {
+    content: '';
+    position: absolute;
+    left: -2.15rem;
+    top: 0.45rem;
+    width: 12px;
+    height: 12px;
+    background: var(--accent);
+    border: 3px solid var(--paper);
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px var(--accent);
+  }
+
+  .timeline-phase:nth-child(2)::before { background: var(--gold); box-shadow: 0 0 0 2px var(--gold); }
+  .timeline-phase:nth-child(3)::before { background: var(--ink-muted); box-shadow: 0 0 0 2px var(--ink-muted); }
+
+  .phase-label {
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--ink);
+    margin-bottom: 0.5rem;
+  }
+
+  .phase-content {
+    font-size: 0.92rem;
+    color: var(--ink-light);
+    line-height: 1.75;
+  }
+
+  /* ── FINAL SUMMARY ── */
+  .final-list {
+    counter-reset: final;
+    list-style: none !important;
+    padding-left: 0 !important;
+    margin: 2rem 0;
+  }
+
+  .final-list li {
+    counter-increment: final;
+    padding: 1.5rem 1.5rem 1.5rem 4.5rem !important;
+    margin-bottom: 1rem;
+    background: white;
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    position: relative;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  }
+
+  .final-list li::before {
+    content: counter(final) !important;
+    position: absolute;
+    left: 1.2rem;
+    top: 1.3rem;
+    width: 2.2rem;
+    height: 2.2rem;
+    background: var(--accent) !important;
+    border-radius: 50% !important;
+    color: white;
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .final-list li strong { display: block; margin-bottom: 0.3rem; color: var(--ink); }
+
+  /* ── REFERENCES ── */
+  .references {
+    margin-top: 5rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--rule);
+  }
+
+  .references h2 {
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 0.75rem;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 1.5rem;
+  }
+
+  .ref-item {
+    font-family: var(--sans);
+    font-size: 0.82rem;
+    line-height: 1.65;
+    color: var(--ink-light);
+    margin-bottom: 1rem;
+    padding-left: 1.5rem;
+    position: relative;
+  }
+
+  .ref-item::before {
+    content: '—';
+    position: absolute;
+    left: 0;
+    color: var(--ink-muted);
+  }
+
+  .ref-item a {
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s;
+    word-break: break-all;
+  }
+
+  .ref-item a:hover { border-bottom-color: var(--accent); }
+
+  /* ── COLOPHON ── */
+  .colophon {
+    max-width: var(--max-width);
+    margin: 0 auto;
+    padding: 3rem var(--gutter) 8rem;
+    text-align: center;
+    color: var(--ink-muted);
+    font-family: var(--sans);
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    border-top: 1px solid var(--rule);
+  }
+
+  .colophon .ornament {
+    display: block;
+    margin: 0 auto 1rem;
+    width: 30px;
+    height: 1px;
+    background: var(--gold);
+  }
+
+  /* ── PROGRESS BAR ── */
+  .progress-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 0%;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--gold));
+    z-index: 1000;
+    transition: width 0.15s;
+  }
+
+  /* ── BACK TO TOP ── */
+  .back-top {
+    position: fixed;
+    bottom: 5rem;
+    right: 2rem;
+    width: 42px;
+    height: 42px;
+    background: var(--chapter-bg);
+    color: var(--chapter-text);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.3s, transform 0.3s;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+    z-index: 999;
+  }
+
+  .back-top.visible { opacity: 1; transform: translateY(0); }
+  .back-top:hover { background: var(--accent); }
+
+  /* ── SIDE NAV ── */
+  .side-nav {
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    width: 260px;
+    background: var(--chapter-bg);
+    color: var(--chapter-text);
+    z-index: 900;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(-100%);
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s;
+    box-shadow: none;
+    overflow: hidden;
+  }
+
+  .side-nav.open {
+    transform: translateX(0);
+    box-shadow: 4px 0 30px rgba(0,0,0,0.25);
+  }
+
+  .side-nav-header {
+    padding: 1.8rem 1.5rem 1.2rem;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    flex-shrink: 0;
+  }
+
+  .side-nav-header .nav-book-title {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--chapter-text);
+    line-height: 1.3;
+  }
+
+  .side-nav-header .nav-book-sub {
+    font-family: var(--sans);
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-top: 0.4rem;
+  }
+
+  .side-nav-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.8rem 0;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.15) transparent;
+  }
+
+  .side-nav-list::-webkit-scrollbar { width: 4px; }
+  .side-nav-list::-webkit-scrollbar-track { background: transparent; }
+  .side-nav-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
+
+  .side-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.55rem 1.5rem;
+    text-decoration: none;
+    color: rgba(240,232,220,0.5);
+    transition: all 0.25s;
+    position: relative;
+    cursor: pointer;
+  }
+
+  .side-nav-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: var(--accent-light);
+    opacity: 0;
+    transition: opacity 0.25s;
+  }
+
+  .side-nav-item:hover {
+    color: rgba(240,232,220,0.85);
+    background: rgba(255,255,255,0.04);
+  }
+
+  .side-nav-item.active {
+    color: var(--chapter-text);
+    background: rgba(255,255,255,0.06);
+  }
+
+  .side-nav-item.active::before { opacity: 1; }
+
+  .side-nav-item .nav-num {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    color: var(--gold);
+    flex-shrink: 0;
+    width: 1.6rem;
+    text-align: right;
+    opacity: 0.6;
+    transition: opacity 0.25s;
+  }
+
+  .side-nav-item.active .nav-num { opacity: 1; }
+
+  .side-nav-item .nav-label {
+    font-family: var(--sans);
+    font-size: 0.78rem;
+    font-weight: 400;
+    line-height: 1.35;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .side-nav-item.active .nav-label { font-weight: 600; }
+
+  .side-nav-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    flex-shrink: 0;
+  }
+
+  .side-nav-progress {
+    height: 2px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 1px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+  }
+
+  .side-nav-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-light), var(--gold));
+    width: 0%;
+    transition: width 0.2s;
+    border-radius: 1px;
+  }
+
+  .side-nav-progress-text {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    color: rgba(240,232,220,0.35);
+    letter-spacing: 0.05em;
+  }
+
+  /* ── HAMBURGER TOGGLE ── */
+  .nav-toggle {
+    position: fixed;
+    left: 1.2rem;
+    top: 1.2rem;
+    z-index: 950;
+    width: 40px;
+    height: 40px;
+    background: var(--chapter-bg);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    opacity: 0;
+    transform: translateY(-8px);
+    transition: opacity 0.35s, transform 0.35s, background 0.2s;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+  }
+
+  .nav-toggle.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .nav-toggle:hover { background: var(--accent); }
+
+  .nav-toggle span {
+    display: block;
+    width: 18px;
+    height: 2px;
+    background: var(--chapter-text);
+    border-radius: 1px;
+    transition: transform 0.3s, opacity 0.3s;
+  }
+
+  .nav-toggle.active span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  .nav-toggle.active span:nth-child(2) { opacity: 0; }
+  .nav-toggle.active span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+  /* ── OVERLAY ── */
+  .nav-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 899;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s;
+    backdrop-filter: blur(2px);
+  }
+
+  .nav-overlay.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* ── BOTTOM PAGE NAV ── */
+  .page-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 800;
+    display: flex;
+    align-items: stretch;
+    background: var(--paper);
+    border-top: 1px solid var(--rule);
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.06);
+    transform: translateY(100%);
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .page-nav.visible { transform: translateY(0); }
+
+  .page-nav-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 0.7rem 1.2rem;
+    text-decoration: none;
+    color: var(--ink);
+    cursor: pointer;
+    border: none;
+    background: none;
+    transition: background 0.2s;
+    min-width: 0;
+  }
+
+  .page-nav-btn:hover { background: var(--paper-deep); }
+
+  .page-nav-btn.next { align-items: flex-end; text-align: right; border-left: 1px solid var(--rule); }
+
+  .page-nav-btn .pn-dir {
+    font-family: var(--sans);
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin-bottom: 0.15rem;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .page-nav-btn .pn-title {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 0.82rem;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    color: var(--ink);
+  }
+
+  .page-nav-btn.disabled {
+    opacity: 0.3;
+    pointer-events: none;
+  }
+
+  /* ── MINI-MAP (right side dots) ── */
+  .mini-map {
+    position: fixed;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 800;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    opacity: 0;
+    transition: opacity 0.35s;
+  }
+
+  .mini-map.visible { opacity: 1; }
+
+  .mini-map-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--rule);
+    cursor: pointer;
+    transition: all 0.25s;
+    position: relative;
+  }
+
+  .mini-map-dot:hover { background: var(--ink-muted); transform: scale(1.4); }
+
+  .mini-map-dot.active {
+    background: var(--accent);
+    transform: scale(1.5);
+    box-shadow: 0 0 0 3px rgba(139,37,0,0.15);
+  }
+
+  .mini-map-dot .mm-tooltip {
+    position: absolute;
+    right: calc(100% + 10px);
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--chapter-bg);
+    color: var(--chapter-text);
+    font-family: var(--sans);
+    font-size: 0.68rem;
+    padding: 0.3rem 0.6rem;
+    border-radius: 4px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+
+  .mini-map-dot:hover .mm-tooltip { opacity: 1; }
+
+  @media (max-width: 900px) {
+    .mini-map { display: none; }
+  }
+
+  /* ── Keyboard hint ── */
+  .kbd-hint {
+    position: fixed;
+    bottom: 5.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--sans);
+    font-size: 0.65rem;
+    color: var(--ink-muted);
+    background: var(--paper-deep);
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    border: 1px solid var(--rule);
+    opacity: 0;
+    transition: opacity 0.5s;
+    pointer-events: none;
+    z-index: 801;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .kbd-hint.visible { opacity: 1; }
+
+  .kbd-hint kbd {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    background: white;
+    padding: 0.1rem 0.35rem;
+    border-radius: 3px;
+    border: 1px solid var(--rule);
+    box-shadow: 0 1px 0 var(--rule);
+  }
+
+  /* ── PRINT ── */
+  @media print {
+    .cover { min-height: auto; padding: 4rem 2rem; break-after: page; }
+    .progress-bar, .back-top, .nav-toggle, .side-nav, .nav-overlay, .page-nav, .mini-map, .kbd-hint { display: none; }
+    .chapter { break-inside: avoid; }
+    body { font-size: 11pt; }
+  }
+
+</style>
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar"></div>
+<button class="back-top" id="backTop" onclick="window.scrollTo({top:0})">↑</button>
+
+<button class="nav-toggle" id="navToggle"><span></span><span></span><span></span></button>
+<div class="nav-overlay" id="navOverlay"></div>
+<nav class="side-nav" id="sideNav">
+  <div class="side-nav-header">
+    <div class="nav-book-title">Genomic <em>ETF</em></div>
+    <div class="nav-book-sub">유전자 ETF 개념 정리</div>
+  </div>
+  <div class="side-nav-list" id="sideNavList">
+    <a class="side-nav-item" data-target="ch1"><span class="nav-num">01</span><span class="nav-label">한 줄 정의</span></a>
+    <a class="side-nav-item" data-target="ch2"><span class="nav-num">02</span><span class="nav-label">왜 이런 상품이 필요한가</span></a>
+    <a class="side-nav-item" data-target="ch3"><span class="nav-num">03</span><span class="nav-label">왜 "ETF"라고 부를 수 있나</span></a>
+    <a class="side-nav-item" data-target="ch4"><span class="nav-num">04</span><span class="nav-label">무엇이 거래되는가</span></a>
+    <a class="side-nav-item" data-target="ch5"><span class="nav-num">05</span><span class="nav-label">왜 Differential Privacy가 기초자산 안정장치인가</span></a>
+    <a class="side-nav-item" data-target="ch6"><span class="nav-num">06</span><span class="nav-label">유전자 ETF 시장의 기본 구조</span></a>
+    <a class="side-nav-item" data-target="ch7"><span class="nav-num">07</span><span class="nav-label">NAV와 시장가격은 어떻게 정해지는가</span></a>
+    <a class="side-nav-item" data-target="ch8"><span class="nav-num">08</span><span class="nav-label">흔한 유전자가 왜 ETF의 코어가 되는가</span></a>
+    <a class="side-nav-item" data-target="ch9"><span class="nav-num">09</span><span class="nav-label">희귀변이가 왜 무조건 대형 비중이 아닌가</span></a>
+    <a class="side-nav-item" data-target="ch10"><span class="nav-num">10</span><span class="nav-label">운용사가 실제로 파는 것</span></a>
+    <a class="side-nav-item" data-target="ch11"><span class="nav-num">11</span><span class="nav-label">언제 현실화될 수 있나</span></a>
+    <a class="side-nav-item" data-target="ch12"><span class="nav-num">12</span><span class="nav-label">과장되는 지점</span></a>
+    <a class="side-nav-item" data-target="ch13"><span class="nav-num">13</span><span class="nav-label">가장 중요한 최종 정리</span></a>
+  </div>
+  <div class="side-nav-footer">
+    <div class="side-nav-progress"><div class="side-nav-progress-fill" id="sideNavProgress"></div></div>
+    <div class="side-nav-progress-text" id="sideNavProgressText">0 / 13 chapters</div>
+  </div>
+</nav>
+
+<div class="mini-map" id="miniMap">
+  <div class="mini-map-dot" data-target="ch1"><span class="mm-tooltip">01 한 줄 정의</span></div>
+  <div class="mini-map-dot" data-target="ch2"><span class="mm-tooltip">02 왜 이런 상품이 필요한가</span></div>
+  <div class="mini-map-dot" data-target="ch3"><span class="mm-tooltip">03 왜 "ETF"라고 부를 수 있나</span></div>
+  <div class="mini-map-dot" data-target="ch4"><span class="mm-tooltip">04 무엇이 거래되는가</span></div>
+  <div class="mini-map-dot" data-target="ch5"><span class="mm-tooltip">05 왜 Differential Privacy가 기초자산 안정장치인가</span></div>
+  <div class="mini-map-dot" data-target="ch6"><span class="mm-tooltip">06 유전자 ETF 시장의 기본 구조</span></div>
+  <div class="mini-map-dot" data-target="ch7"><span class="mm-tooltip">07 NAV와 시장가격은 어떻게 정해지는가</span></div>
+  <div class="mini-map-dot" data-target="ch8"><span class="mm-tooltip">08 흔한 유전자가 왜 ETF의 코어가 되는가</span></div>
+  <div class="mini-map-dot" data-target="ch9"><span class="mm-tooltip">09 희귀변이가 왜 무조건 대형 비중이 아닌가</span></div>
+  <div class="mini-map-dot" data-target="ch10"><span class="mm-tooltip">10 운용사가 실제로 파는 것</span></div>
+  <div class="mini-map-dot" data-target="ch11"><span class="mm-tooltip">11 언제 현실화될 수 있나</span></div>
+  <div class="mini-map-dot" data-target="ch12"><span class="mm-tooltip">12 과장되는 지점</span></div>
+  <div class="mini-map-dot" data-target="ch13"><span class="mm-tooltip">13 가장 중요한 최종 정리</span></div>
+</div>
+
+<div class="page-nav" id="pageNav">
+  <button class="page-nav-btn prev disabled" id="prevBtn">
+    <span class="pn-dir">← 이전</span>
+    <span class="pn-title" id="prevTitle">—</span>
+  </button>
+  <button class="page-nav-btn next disabled" id="nextBtn">
+    <span class="pn-dir">다음 →</span>
+    <span class="pn-title" id="nextTitle">—</span>
+  </button>
+</div>
+
+<div class="kbd-hint" id="kbdHint">
+  <kbd>←</kbd> <kbd>→</kbd> 키보드로 챕터 이동 &nbsp;·&nbsp; <kbd>M</kbd> 메뉴
+</div>
+
+<header class="cover">
+  <div class="cover-label">Concept Paper</div>
+  <h1 class="cover-title">Genomic<br><em>ETF</em></h1>
+  <p class="cover-subtitle">유전자 ETF 개념 정리 — 책의 유전자 가치를 NAV로 두고, 그 가치를 ETF 구조로 시장에서 거래 가능하게 만드는 설계</p>
+  <div class="cover-ornament"></div>
+  <p class="cover-meta">Explainer · 2026</p>
+</header>
+
+<nav class="toc" id="toc">
+  <p class="toc-heading">목차 Table of Contents</p>
+  <ol class="toc-list">
+    <li><a href="#ch1"><span class="toc-title">한 줄 정의</span><span class="toc-dots"></span><span class="toc-page">01</span></a></li>
+    <li><a href="#ch2"><span class="toc-title">왜 이런 상품이 필요한가</span><span class="toc-dots"></span><span class="toc-page">02</span></a></li>
+    <li><a href="#ch3"><span class="toc-title">왜 "ETF"라고 부를 수 있나</span><span class="toc-dots"></span><span class="toc-page">03</span></a></li>
+    <li><a href="#ch4"><span class="toc-title">무엇이 거래되는가</span><span class="toc-dots"></span><span class="toc-page">04</span></a></li>
+    <li><a href="#ch5"><span class="toc-title">왜 Differential Privacy가 기초자산 안정장치인가</span><span class="toc-dots"></span><span class="toc-page">05</span></a></li>
+    <li><a href="#ch6"><span class="toc-title">유전자 ETF 시장의 기본 구조</span><span class="toc-dots"></span><span class="toc-page">06</span></a></li>
+    <li><a href="#ch7"><span class="toc-title">NAV와 시장가격은 어떻게 정해지는가</span><span class="toc-dots"></span><span class="toc-page">07</span></a></li>
+    <li><a href="#ch8"><span class="toc-title">흔한 유전자가 왜 ETF의 코어가 되는가</span><span class="toc-dots"></span><span class="toc-page">08</span></a></li>
+    <li><a href="#ch9"><span class="toc-title">희귀변이가 왜 무조건 대형 비중이 아닌가</span><span class="toc-dots"></span><span class="toc-page">09</span></a></li>
+    <li><a href="#ch10"><span class="toc-title">운용사가 실제로 파는 것</span><span class="toc-dots"></span><span class="toc-page">10</span></a></li>
+    <li><a href="#ch11"><span class="toc-title">언제 현실화될 수 있나</span><span class="toc-dots"></span><span class="toc-page">11</span></a></li>
+    <li><a href="#ch12"><span class="toc-title">과장되는 지점</span><span class="toc-dots"></span><span class="toc-page">12</span></a></li>
+    <li><a href="#ch13"><span class="toc-title">가장 중요한 최종 정리</span><span class="toc-dots"></span><span class="toc-page">13</span></a></li>
+  </ol>
+</nav>
+
+<main class="content">
+
+<!-- CH 01 -->
+<section class="chapter" id="ch1">
+  <span class="chapter-number">Chapter 01</span>
+  <h2>한 줄 정의</h2>
+  <p class="lead-text"><strong>Genomic ETF(유전자 ETF)</strong>란 책에서 정의한 <strong>유전자 가치</strong>를 그대로 <strong>이론적 순자산가치(NAV)</strong>로 삼고, 그 가치를 시장에서 사고팔 수 있게 만든 <strong>상장형 fund wrapper</strong>다. 즉, 원래 책의 “유전자 화폐”가 계산 가능한 가치 단위였다면, 여기서는 그걸 <strong>창출·환매가 가능한 ETF 주식</strong>으로 바꾼다.</p>
+  <blockquote><p>유전자 ETF는 DNA를 상장시키는 게 아니라, <strong>유전자 가치의 cash-flow exposure를 표준화해서 거래소 위에 올리는 구조</strong>다.</p></blockquote>
+</section>
+
+<!-- CH 02 -->
+<section class="chapter" id="ch2">
+  <span class="chapter-number">Chapter 02</span>
+  <h2>왜 이런 상품이 필요한가</h2>
+  <p>책의 원래 프레임은 맞다. 유전체 데이터는 이미 가치가 있는데, 그 가치를 보통 <strong>연구 참여 보상</strong>이나 <strong>데이터 라이선스 계약</strong> 수준에서만 다뤘다. 문제는 이 방식이 너무 <strong>비표준적이고, 비유동적이고, 양자계약 중심</strong>이라는 점이다.</p>
+  <p>운용사 입장에서는 훨씬 더 단순한 질문으로 바뀐다. “이 유전자 가치가 정말 돈이 된다면, 왜 일반 투자자는 그 가치에 직접 접근하지 못하나?” ETF는 바로 그 간극을 메운다.</p>
+  <ul>
+    <li><strong>표준화</strong> — 투자자는 복잡한 바이오 데이터 계약이 아니라 ETF 한 종목을 산다.</li>
+    <li><strong>유동성</strong> — 거래소에서 실시간 매매가 가능해진다.</li>
+    <li><strong>가격발견</strong> — 유전자 가치의 시장가격이 NAV 대비 프리미엄/디스카운트로 드러난다.</li>
+    <li><strong>거버넌스</strong> — 운용사, 수탁, AP/LP, 공시 체계 안에서 상품이 관리된다.</li>
+  </ul>
+  <p>일반 ETF도 투자자는 거래소에서 시장가격으로 사고팔고, 그 가격은 NAV와 같을 수도 다를 수도 있다. 유전자 ETF도 똑같다. 다만 기초자산이 주식 바스켓이 아니라 <strong>유전자 가치 바스켓</strong>이라는 점만 다르다.</p>
+</section>
+
+<!-- CH 03 -->
+<section class="chapter" id="ch3">
+  <span class="chapter-number">Chapter 03</span>
+  <h2>왜 “ETF”라고 부를 수 있나</h2>
+
+  <h3>1. NAV가 있다</h3>
+  <p>사용자가 이미 못 박은 전제가 핵심이다. <strong>이론적 가치는 책의 유전자 가치와 동일</strong>하다. 즉, 책이 계산하던 genomic contribution value가 그대로 펀드의 <strong>NAV 산식</strong>이 된다.</p>
+  <div class="math-block" data-math="NAV_t = \frac{V_{genomic,t} - Fees_t - Liabilities_t}{Shares_t}"></div>
+
+  <h3>2. 주식처럼 거래된다</h3>
+  <p>ETF는 펀드이지만 주식처럼 거래소에서 거래된다. 따라서 투자자는 “유전자 가치에 대한 노출”을 브로커 계좌에서 사고팔 수 있다.</p>
+
+  <h3>3. 1차 시장과 2차 시장이 분리된다</h3>
+  <p>소매 투자자는 거래소에서 ETF 지분을 매매하고, AP(Authorized Participant)는 대량의 <strong>creation unit</strong> 단위로 펀드와 직접 창출·환매를 한다. 이 구조 덕분에 시장가격이 NAV에 묶인다.</p>
+
+  <h3>4. 공시와 차익거래 메커니즘이 붙는다</h3>
+  <p>운용사는 보유 바스켓, NAV, 프리미엄·디스카운트, 스프레드 등을 공시하고, AP/LP는 그 정보를 보고 차익거래를 수행한다. 그러니까 이건 “유전자 화폐”의 은유적 표현보다 한 단계 더 구체적인, <strong>유전자 가치의 금융상품화</strong>다.</p>
+
+  <blockquote><p>유전자 ETF에서 거래되는 건 사람의 유전자 그 자체가 아니라, <strong>유전자 가치 산식이 만들어내는 펀드 지분</strong>이다.</p></blockquote>
+</section>
+
+<!-- CH 04 -->
+<section class="chapter" id="ch4">
+  <span class="chapter-number">Chapter 04</span>
+  <h2>핵심: 무엇이 거래되는가</h2>
+  <p>여기서도 제일 중요한 건 <strong>raw DNA를 상장시키는 게 아니라는 점</strong>이다.</p>
+
+  <div class="card-grid">
+    <div class="card">
+      <div class="card-label negative">✕ ETF에 직접 담기지 않는 것</div>
+      <ul>
+        <li>개인의 identity 자체</li>
+        <li>이름이 붙은 FASTQ/VCF 원본 파일</li>
+        <li>“이 희귀변이는 저 사람 것”이라는 식별 정보</li>
+        <li>무제한 복제 가능한 개인별 데이터 권리</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-label positive">○ ETF가 담는 것</div>
+      <ul>
+        <li>유전자 가치 산식으로 환산된 NAV</li>
+        <li>코호트 라이선스 수익·API 사용료·분석 구독료</li>
+        <li>DP-safe model/report 판매에서 생기는 현금흐름</li>
+        <li>인간 유전학 기반 타깃 검증 수익의 분배권</li>
+        <li>재사용 가능한 genomic exposure basket</li>
+      </ul>
+    </div>
+  </div>
+
+  <blockquote><p>유전자 ETF가 파는 건 <strong>사람</strong>이 아니라, <strong>사람들로부터 집계된 유전자 가치의 수익청구권</strong>이다.</p></blockquote>
+</section>
+
+<!-- CH 05 -->
+<section class="chapter" id="ch5">
+  <span class="chapter-number">Chapter 05</span>
+  <h2>왜 Differential Privacy가 기초자산 안정장치인가</h2>
+  <p>이 파트는 원문 구조를 거의 그대로 가져가도 된다. 유전자 ETF의 기초자산이 살아남으려면 <strong>개별 유전체가 다시 식별되지 않아야</strong> 한다. 안 그러면 상품의 기반이 되는 코호트 계약 자체가 무너진다.</p>
+
+  <h3>DP가 없으면 무슨 일이 벌어지나</h3>
+  <p>희귀변이 보유자, carrier count, 극단 phenotype, 특정 병원 서브셋이 노출되면 membership inference나 differencing attack으로 기초자산이 독성 자산이 된다. 그러면 신규 데이터 유입이 끊기고, 기존 계약도 법적 리스크 때문에 할인된다.</p>
+
+  <h3>ETF 관점에서 왜 치명적인가</h3>
+  <p>ETF의 NAV는 결국 미래 현금흐름의 현재가치다. 그런데 프라이버시 사고가 나면 기대 현금흐름이 줄고 할인율은 올라간다. 즉, 프라이버시 리스크는 그냥 윤리 문제가 아니라 <strong>NAV 훼손 요인</strong>이다.</p>
+  <div class="math-block" data-math="NAV \downarrow \;\text{when}\; Risk_{privacy} \uparrow"></div>
+
+  <h3>그래서 DP는 무엇을 하나</h3>
+  <p>DP는 유전자 ETF의 원천 풀을 <strong>반복 거래 가능한 기초자산</strong>으로 유지시킨다. 개별 사람이 보이는 게 아니라, 펀드가 사용할 수 있는 통계적 신호만 남긴다. 운용사가 ETF를 계속 굴리려면 이 장치가 사실상 필수다.</p>
+
+  <blockquote><p>유전자 ETF에서 DP는 착한 옵션이 아니라, <strong>기초자산이 상장 적격성을 유지하게 하는 손상 방지 장치</strong>다.</p></blockquote>
+</section>
+
+<!-- CH 06 -->
+<section class="chapter" id="ch6">
+  <span class="chapter-number">Chapter 06</span>
+  <h2>유전자 ETF 시장의 기본 구조</h2>
+
+  <div class="structure-flow">
+    <div class="structure-node">
+      <span class="node-number">01</span>
+      <div class="node-title">원천 풀</div>
+      <div class="node-en">Contributor Pool</div>
+    </div>
+    <div class="structure-node">
+      <span class="node-number">02</span>
+      <div class="node-title">플랫폼</div>
+      <div class="node-en">Originator</div>
+    </div>
+    <div class="structure-node">
+      <span class="node-number">03</span>
+      <div class="node-title">운용사/AP</div>
+      <div class="node-en">Manager / AP</div>
+    </div>
+    <div class="structure-node">
+      <span class="node-number">04</span>
+      <div class="node-title">투자자</div>
+      <div class="node-en">Investor</div>
+    </div>
+  </div>
+
+  <h3>1. 원천 풀 (Contributor Pool)</h3>
+  <p>개인·병원·바이오뱅크·리서치 코호트가 유전자 데이터를 직접 넘기는 게 아니라, <strong>계약 가능한 사용권과 수익 분배 규칙</strong>을 제공한다. 이 단계에서 원천 데이터는 플랫폼 안에 남고, ETF는 그 데이터의 경제적 가치만 취한다.</p>
+
+  <h3>2. 플랫폼 (Originator)</h3>
+  <p>플랫폼은 유전자 가치를 측정하는 엔진이다. 여기서 cohort segmentation, quality control, DP 적용, target-validation package 생성, API 매출 집계가 일어난다. 쉽게 말해 <strong>원재료를 금융 가능한 cash-flow로 바꾸는 공장</strong>이다.</p>
+
+  <h3>3. 운용사 / AP / LP</h3>
+  <p>운용사는 플랫폼에서 나온 현금흐름과 평가모형을 묶어 ETF를 설계한다. AP는 creation unit 단위로 ETF를 창출·환매하고, LP/MM은 거래소에서 양방향 호가를 제공해 괴리율을 좁힌다. 국내 감각으로는 LP, 미국 규정 문맥으로는 AP가 핵심 축이다.</p>
+
+  <h3>4. 투자자</h3>
+  <p>투자자는 더 이상 바이오 데이터 계약서를 읽지 않는다. 대신 “이 유전자 ETF가 어떤 genomic basket을 추종하고, 수익이 어디서 나오며, 괴리율이 얼마나 안정적인가”를 보고 투자한다.</p>
+</section>
+
+<!-- CH 07 -->
+<section class="chapter" id="ch7">
+  <span class="chapter-number">Chapter 07</span>
+  <h2>NAV와 시장가격은 어떻게 정해지는가</h2>
+  <p>이 상품의 핵심은 <strong>책의 이론값 = ETF의 NAV</strong>라는 전제다. 그 위에 시장가격이 얹힌다.</p>
+
+  <div class="math-block" data-math="NAV_t = \frac{\sum_k PV(CF_{k,t}) + Value(Genomic\ Rights)_t - Costs_t}{Shares_t}"></div>
+  <p>여기서 <span class="math-inline" data-math="CF_{k,t}"></span>는 라이선스 수익, 분석 구독료, 로열티, 데이터 API 매출 같은 현금흐름이고, <span class="math-inline" data-math="Value(Genomic\ Rights)_t"></span>는 원문 책의 유전자 가치 산식을 그대로 반영한 평가액이다.</p>
+
+  <h3>시장가격</h3>
+  <div class="math-block" data-math="P_t = NAV_t \times (1 + Premium/Discount_t)"></div>
+  <p>ETF는 거래소에서 시장가격으로 거래되므로, 장중에는 NAV보다 비싸거나 싸게 거래될 수 있다.</p>
+
+  <h3>운용사가 괴리율을 줄이는 방법</h3>
+  <ul>
+    <li><strong>명확한 creation/redemption 바스켓</strong> — AP가 무엇을 넣고 무엇을 받아가는지 매일 분명해야 한다.</li>
+    <li><strong>일별 포트폴리오 공시</strong> — NAV의 근거가 되는 바스켓을 개장 전 공개해야 차익거래가 돈이 된다.</li>
+    <li><strong>다수 AP 계약</strong> — AP가 한 곳뿐이면 괴리 축소 능력이 약해진다.</li>
+    <li><strong>LP/MM 양방향 호가</strong> — 소매 시장의 스프레드와 체결 공백을 줄인다.</li>
+    <li><strong>custom basket 허용</strong> — 현금흐름/권리 묶음을 유연하게 넣고 빼서 창출·환매 비용을 낮춘다.</li>
+    <li><strong>프리미엄·디스카운트 대시보드 공시</strong> — 괴리가 커지면 시장이 바로 감지하게 만든다.</li>
+  </ul>
+
+  <blockquote><p>괴리율은 “설명”으로 줄어드는 게 아니라, <strong>AP가 실제로 먹을 수 있는 차익거래 구조</strong>가 있을 때 줄어든다.</p></blockquote>
+</section>
+
+<!-- CH 08 -->
+<section class="chapter" id="ch8">
+  <span class="chapter-number">Chapter 08</span>
+  <h2>흔한 유전자가 왜 ETF의 코어가 되는가</h2>
+  <p>원문에서 흔한 유전형이 baseline anchoring과 calibration에 기여한다고 했는데, ETF 버전에서도 똑같이 중요하다. 흔한 유전형은 펀드의 <strong>코어 바스켓</strong>이 된다.</p>
+  <h3>코어 바스켓이 되는 이유</h3>
+  <ul>
+    <li><strong>대표성</strong> — 코호트 전체를 설명하는 공통 신호를 제공한다.</li>
+    <li><strong>분산</strong> — 특정 희귀변이에 NAV가 과도하게 쏠리는 걸 막는다.</li>
+    <li><strong>재현성</strong> — valuation committee가 매일 값 붙이기 쉬운 축을 만든다.</li>
+    <li><strong>유동성</strong> — AP가 창출·환매 바스켓을 이해하고 헤지하기 쉬워진다.</li>
+    <li><strong>프라이버시 내구성</strong> — DP noise 아래에서도 안정적인 신호를 유지한다.</li>
+  </ul>
+  <p>쉽게 말해 흔한 유전자는 ETF의 “대형주 코어 홀딩” 같은 거다. 수익률 드라마는 덜해도, 펀드를 성립시키는 바닥이다.</p>
+</section>
+
+<!-- CH 09 -->
+<section class="chapter" id="ch9">
+  <span class="chapter-number">Chapter 09</span>
+  <h2>희귀변이가 왜 무조건 대형 비중이 아닌가</h2>
+  <p>희귀변이는 분명 alpha source일 수 있다. 하지만 ETF는 “희귀하다 = 크게 담는다”로 못 간다.</p>
+  <div class="math-block" data-math="Weight_i \propto \frac{Marginal\ Value_i \times Confidence_i}{Illiquidity_i + Privacy\ Risk_i}"></div>
+  <p>희귀변이는 정보가치가 높아도, 다음 네 가지 때문에 ETF 내 비중이 제한된다.</p>
+  <ul>
+    <li><strong>검증 부족</strong> — effect estimate의 신뢰구간이 넓다.</li>
+    <li><strong>용량 한계</strong> — 동일 희귀변이를 대량으로 확장할 수 없다.</li>
+    <li><strong>프라이버시 리스크</strong> — 소수 보유자 노출 위험이 크다.</li>
+    <li><strong>헤지 난이도</strong> — AP가 장중 차익거래를 하기가 어렵다.</li>
+  </ul>
+  <blockquote><p>유전자 ETF는 희귀성에 돈을 베팅하는 게 아니라, <strong>지속적으로 평가 가능하고 헤지 가능한 희귀성</strong>에만 비중을 준다.</p></blockquote>
+</section>
+
+<!-- CH 10 -->
+<section class="chapter" id="ch10">
+  <span class="chapter-number">Chapter 10</span>
+  <h2>운용사가 실제로 파는 것</h2>
+  <p>운용사가 ETF를 출시한다는 말은 “유전체를 펀드에 넣는다”가 아니다. 실제 상품화 패키지는 훨씬 금융적으로 생긴다.</p>
+  <ul>
+    <li><strong>Index / basket methodology</strong> — 어떤 genomic value를 어떤 비중으로 담는지</li>
+    <li><strong>Valuation policy memo</strong> — 책의 이론값을 어떻게 NAV로 번역하는지</li>
+    <li><strong>Creation / redemption handbook</strong> — AP가 넣고 빼는 바스켓 규칙</li>
+    <li><strong>Revenue waterfall</strong> — 라이선스료·API료·로열티를 ETF 현금흐름으로 귀속시키는 구조</li>
+    <li><strong>Privacy &amp; governance binder</strong> — DP, 동의, 재사용권, 감사로그 문서</li>
+    <li><strong>Premium / discount dashboard</strong> — NAV, 시장가, 괴리, 스프레드 공시</li>
+  </ul>
+
+  <p>즉 운용사는 유전자 자체를 판매하는 게 아니라, <strong>유전자 가치의 평가 규칙 + 현금흐름 귀속 규칙 + 차익거래 가능한 바스켓</strong>을 합쳐서 ETF로 내놓는 것이다.</p>
+
+  <blockquote><p>상품화의 본질은 “데이터를 금융으로 번역하는 문서 세트”를 만드는 데 있다.</p></blockquote>
+</section>
+
+<!-- CH 11 -->
+<section class="chapter" id="ch11">
+  <span class="chapter-number">Chapter 11</span>
+  <h2>언제 현실화될 수 있나</h2>
+  <p>이건 내일 바로 상장되는 얘기가 아니다. 특히 유전체 데이터의 권리·동의·수익 귀속이 아직 표준화되지 않았기 때문에 단계적으로 와야 한다.</p>
+
+  <h3>이미 현실에 가까운 부분</h3>
+  <ol>
+    <li>유전체 데이터가 제약·진단·AI 모델의 상업적 인풋으로 쓰인다는 점</li>
+    <li>데이터 라이선스 수익, 분석 구독료, 타깃 검증 매출처럼 현금흐름의 씨앗이 이미 있다는 점</li>
+    <li>ETF 시장에는 AP·창출환매·프리미엄/디스카운트 공시 같은 표준 메커니즘이 이미 존재한다는 점</li>
+  </ol>
+
+  <h3>아직 덜 현실인 부분</h3>
+  <p>유전자 가치 자체를 법적으로 어떤 권리로 묶을지, 수익을 어떤 SPV나 trust에 귀속시킬지, 원천 코호트에게 어떤 배당권을 줄지, 그리고 규제당국이 이걸 어떤 자산 클래스로 볼지는 아직 열려 있다.</p>
+
+  <h3>가장 현실적인 타임라인</h3>
+  <div class="timeline">
+    <div class="timeline-phase">
+      <div class="phase-label">Phase 1 — 사모/파일럿 단계</div>
+      <div class="phase-content">플랫폼이 genomic revenue share를 사모 vehicle이나 인덱스 노트 형태로 먼저 실험한다. NAV 산식과 privacy governance를 다듬는 단계다.</div>
+    </div>
+    <div class="timeline-phase">
+      <div class="phase-label">Phase 2 — 상장형 프로토타입</div>
+      <div class="phase-content">현금흐름 귀속 구조가 정리되면, 운용사가 ETF trust를 세우고 AP 계약·일일 바스켓 공시·LP 호가 체계를 붙인다. 이때부터 괴리율 관리가 진짜 과제가 된다.</div>
+    </div>
+    <div class="timeline-phase">
+      <div class="phase-label">Phase 3 — 본격 ETF 생태계</div>
+      <div class="phase-content">여러 AP와 LP가 참여하고, 프리미엄/디스카운트 통계가 축적되며, 유전자 가치가 하나의 투자 섹터처럼 거래된다. 그때 비로소 “유전자 ETF”라는 이름이 시장 용어가 된다.</div>
+    </div>
+  </div>
+
+  <blockquote><p>유전자 ETF는 갑자기 탄생하는 게 아니라, <strong>유전자 가치의 회계 규칙이 먼저 생기고 그 다음에 거래 규칙이 붙는 순서</strong>로 온다.</p></blockquote>
+</section>
+
+<!-- CH 12 -->
+<section class="chapter" id="ch12">
+  <span class="chapter-number">Chapter 12</span>
+  <h2>이 개념이 과장되는 지점</h2>
+  <p>이름이 세서 사람들이 자꾸 SF처럼 말하게 되는데, 그건 좀 자제해야 한다.</p>
+
+  <div class="card-grid">
+    <div class="card">
+      <div class="card-label negative">과한 주장</div>
+      <ul>
+        <li>“개인이 자기 DNA를 주식처럼 직접 상장한다”</li>
+        <li>“희귀변이 하나만으로 ETF가 만들어진다”</li>
+        <li>“NAV는 완벽하고 시장가격은 항상 바로 붙는다”</li>
+        <li>“프라이버시 문제는 기술로 다 끝났다”</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-label positive">방어 가능한 주장</div>
+      <ul>
+        <li>유전자 가치를 ETF wrapper로 표준화할 수 있다</li>
+        <li>책의 이론값을 NAV 산식으로 옮길 수 있다</li>
+        <li>AP/LP와 창출환매가 괴리율을 줄이는 핵심이다</li>
+        <li>DP와 거버넌스가 없으면 상품 자체가 성립하기 어렵다</li>
+      </ul>
+    </div>
+  </div>
+
+  <blockquote><p>유전자 ETF는 DNA를 티커로 바꾸는 환상이 아니라, <strong>유전자 가치의 수익청구권을 ETF 규칙으로 포장하는 금융공학</strong>이다.</p></blockquote>
+</section>
+
+<!-- CH 13 -->
+<section class="chapter" id="ch13">
+  <span class="chapter-number">Chapter 13</span>
+  <h2>가장 중요한 최종 정리</h2>
+  <ul class="final-list">
+    <li><strong>유전자 ETF의 NAV는 책의 유전자 가치와 같다.</strong> 사용자가 준 전제 그대로, 원문의 이론값이 ETF의 이론적 순자산가치가 된다.</li>
+    <li><strong>운용사의 핵심 일은 상품화다.</strong> 유전자 데이터를 직접 상장하는 게 아니라, genomic value를 현금흐름과 권리 묶음으로 번역해 펀드 문서·바스켓·공시 체계 안에 넣는다.</li>
+    <li><strong>괴리율 축소는 AP/LP 구조가 먹여 살린다.</strong> 일일 바스켓 공시, creation/redemption, 양방향 호가, 다수 AP 계약, premium/discount 공시가 있어야 시장가격이 NAV에 붙는다.</li>
+    <li><strong>DP는 상품의 윤리 장식이 아니라 기초자산 보호장치다.</strong> 프라이버시가 깨지면 원천 코호트 계약이 훼손되고, 그 순간 NAV의 신뢰성도 같이 무너진다.</li>
+    <li><strong>따라서 “유전자 화폐”를 “유전자 ETF”로 바꾸면, 은유가 금융 구조로 바뀐다.</strong> 즉 가치 단위를 설명하는 책에서, 실제 상장 메커니즘을 설명하는 상품 설명서로 진화하는 셈이다.</li>
+  </ul>
+</section>
+
+<!-- REFERENCES -->
+<section class="references">
+  <h2>References</h2>
+  <div class="ref-item">SEC. <em>Exchange-Traded Funds: A Small Entity Compliance Guide</em>.<br><a href="https://www.sec.gov/investment/exchange-traded-funds-small-entity-compliance-guide" target="_blank" rel="noopener">sec.gov — website disclosure, baskets, AP agreements</a></div>
+  <div class="ref-item">Investor.gov. <em>Exchange-Traded Funds (ETFs)</em>.<br><a href="https://www.investor.gov/introduction-investing/investing-basics/investment-products/mutual-funds-and-exchange-traded-2" target="_blank" rel="noopener">investor.gov — market price vs NAV, premium/discount basics</a></div>
+  <div class="ref-item">SEC. <em>Exchange-Traded Funds</em> (Final Rule Release No. 33-10695).<br><a href="https://www.sec.gov/files/rules/final/2019/33-10695.pdf" target="_blank" rel="noopener">sec.gov — AP creation/redemption and arbitrage mechanism</a></div>
+  <div class="ref-item">Investor.gov. <em>Updated Investor Bulletin: Exchange-Traded Funds (ETFs)</em>.<br><a href="https://www.investor.gov/introduction-investing/general-resources/news-alerts/alerts-bulletins/investor-bulletins-24" target="_blank" rel="noopener">investor.gov — premium/discount and median bid-ask spread disclosure</a></div>
+  <div class="ref-item">Adapted conceptually from the uploaded source text on <em>Genomic Currency</em>, rewritten into an ETF wrapper while keeping the original chapter-level structure.</div>
+</section>
+
+</main>
+
+<footer class="colophon">
+  <span class="ornament"></span>
+  Genomic ETF: 유전자 ETF 개념 정리<br>
+  Typeset in Playfair Display, Noto Serif KR &amp; IBM Plex Sans KR
+</footer>
+
+<script>
+
+// ── KaTeX rendering ──
+document.querySelectorAll('.math-block').forEach(el => {
+  katex.render(el.dataset.math, el, { displayMode: true, throwOnError: false });
+});
+document.querySelectorAll('.math-inline').forEach(el => {
+  katex.render(el.dataset.math, el, { displayMode: false, throwOnError: false });
+});
+
+// ── Chapter data ──
+const chapterIds = ['ch1', 'ch2', 'ch3', 'ch4', 'ch5', 'ch6', 'ch7', 'ch8', 'ch9', 'ch10', 'ch11', 'ch12', 'ch13'];
+const chapterTitles = ['한 줄 정의', '왜 이런 상품이 필요한가', '왜 "ETF"라고 부를 수 있나', '무엇이 거래되는가', '왜 Differential Privacy가 기초자산 안정장치인가', '유전자 ETF 시장의 기본 구조', 'NAV와 시장가격은 어떻게 정해지는가', '흔한 유전자가 왜 ETF의 코어가 되는가', '희귀변이가 왜 무조건 대형 비중이 아닌가', '운용사가 실제로 파는 것', '언제 현실화될 수 있나', '과장되는 지점', '가장 중요한 최종 정리'];
+
+const chapters = chapterIds.map(id => document.getElementById(id));
+let currentChapter = -1;
+
+// ── Elements ──
+const bar = document.getElementById('progressBar');
+const backBtn = document.getElementById('backTop');
+const toggle = document.getElementById('navToggle');
+const sideNav = document.getElementById('sideNav');
+const overlay = document.getElementById('navOverlay');
+const sideItems = document.querySelectorAll('.side-nav-item');
+const miniDots = document.querySelectorAll('.mini-map-dot');
+const miniMap = document.getElementById('miniMap');
+const pageNav = document.getElementById('pageNav');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+const prevTitle = document.getElementById('prevTitle');
+const nextTitle = document.getElementById('nextTitle');
+const sideProgress = document.getElementById('sideNavProgress');
+const sideProgressText = document.getElementById('sideNavProgressText');
+const kbdHint = document.getElementById('kbdHint');
+
+// ── Side nav toggle ──
+function openNav() {
+  sideNav.classList.add('open');
+  overlay.classList.add('visible');
+  toggle.classList.add('active');
+}
+function closeNav() {
+  sideNav.classList.remove('open');
+  overlay.classList.remove('visible');
+  toggle.classList.remove('active');
+}
+toggle.addEventListener('click', () => sideNav.classList.contains('open') ? closeNav() : openNav());
+overlay.addEventListener('click', closeNav);
+
+// ── Navigate to chapter ──
+function goToChapter(idx) {
+  if (idx < 0 || idx >= chapters.length) return;
+  chapters[idx].scrollIntoView({ behavior: 'smooth', block: 'start' });
+  closeNav();
+}
+
+// ── Click handlers ──
+sideItems.forEach((item, i) => item.addEventListener('click', () => goToChapter(i)));
+miniDots.forEach((dot, i) => dot.addEventListener('click', () => goToChapter(i)));
+prevBtn.addEventListener('click', () => goToChapter(currentChapter - 1));
+nextBtn.addEventListener('click', () => goToChapter(currentChapter + 1));
+
+// ── Keyboard nav ──
+let kbdHintShown = false;
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+    e.preventDefault();
+    goToChapter(currentChapter + 1);
+  } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    goToChapter(currentChapter - 1);
+  } else if (e.key === 'm' || e.key === 'M') {
+    sideNav.classList.contains('open') ? closeNav() : openNav();
+  } else if (e.key === 'Escape') {
+    closeNav();
+  }
+});
+
+// ── Determine current chapter ──
+function updateCurrentChapter() {
+  const scrollY = window.scrollY + window.innerHeight * 0.35;
+  let active = -1;
+  for (let i = chapters.length - 1; i >= 0; i--) {
+    if (chapters[i].offsetTop <= scrollY) { active = i; break; }
+  }
+  if (active === currentChapter) return;
+  currentChapter = active;
+
+  // Side nav
+  sideItems.forEach((item, i) => item.classList.toggle('active', i === active));
+  if (active >= 0) {
+    const activeItem = sideItems[active];
+    const list = document.getElementById('sideNavList');
+    const itemTop = activeItem.offsetTop - list.offsetTop;
+    const listH = list.clientHeight;
+    if (itemTop < list.scrollTop || itemTop > list.scrollTop + listH - 40) {
+      list.scrollTo({ top: itemTop - listH / 3, behavior: 'smooth' });
+    }
+  }
+
+  // Mini-map
+  miniDots.forEach((dot, i) => dot.classList.toggle('active', i === active));
+
+  // Bottom nav
+  prevBtn.classList.toggle('disabled', active <= 0);
+  nextBtn.classList.toggle('disabled', active >= chapters.length - 1);
+  prevTitle.textContent = active > 0 ? chapterTitles[active - 1] : '—';
+  nextTitle.textContent = active < chapters.length - 1 ? chapterTitles[active + 1] : '—';
+
+  // Side nav progress
+  const pct = active >= 0 ? ((active + 1) / chapters.length * 100) : 0;
+  sideProgress.style.width = pct + '%';
+  sideProgressText.textContent = (active >= 0 ? active + 1 : 0) + ' / ' + chapters.length + ' chapters';
+}
+
+// ── Scroll handler ──
+let ticking = false;
+window.addEventListener('scroll', () => {
+  if (!ticking) {
+    requestAnimationFrame(() => {
+      const h = document.documentElement.scrollHeight - window.innerHeight;
+      const pct = h > 0 ? (window.scrollY / h) * 100 : 0;
+      bar.style.width = pct + '%';
+
+      const pastCover = window.scrollY > 400;
+      backBtn.classList.toggle('visible', pastCover);
+      toggle.classList.toggle('visible', pastCover);
+      miniMap.classList.toggle('visible', pastCover);
+      pageNav.classList.toggle('visible', pastCover);
+
+      if (pastCover && !kbdHintShown) {
+        kbdHintShown = true;
+        kbdHint.classList.add('visible');
+        setTimeout(() => kbdHint.classList.remove('visible'), 4500);
+      }
+
+      updateCurrentChapter();
+      ticking = false;
+    });
+    ticking = true;
+  }
+});
+
+// ── Scroll animation ──
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.style.animationPlayState = 'running';
+      observer.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.chapter').forEach(ch => {
+  ch.style.animationPlayState = 'paused';
+  observer.observe(ch);
+});
+
+// ── Initial state ──
+updateCurrentChapter();
+
+</script>
+</body>
+</html>
