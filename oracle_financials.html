@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Oracle Corp (ORCL) — 재무제표 교육 자료</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,400&family=JetBrains+Mono:wght@300;400;500&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #f5f0e8;
+  --paper-dark: #ebe4d6;
+  --paper-edge: #d4c9b5;
+  --ink: #2c2418;
+  --ink-light: #6b5d4d;
+  --ink-faint: #a0937f;
+  --red-ink: #8b2020;
+  --red-glow: #c0392b;
+  --blue-ink: #1a3a5c;
+  --blue-accent: #2980b9;
+  --green-ink: #1e6b3a;
+  --green-accent: #27ae60;
+  --gold: #b8860b;
+  --gold-light: #daa520;
+  --highlight: #fff3c4;
+  --sidebar-bg: #1c1710;
+  --sidebar-text: #e8e0d0;
+  --sidebar-accent: #daa520;
+  --tooltip-bg: #2c2418;
+  --tooltip-text: #f5f0e8;
+  --tab-active: #c0392b;
+  --shadow: rgba(44, 36, 24, 0.15);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #1c1710;
+  color: var(--ink);
+  font-family: 'Noto Sans KR', sans-serif;
+  overflow-x: hidden;
+}
+
+/* ── HEADER ── */
+.hero {
+  position: relative;
+  background: linear-gradient(135deg, #1c1710 0%, #2c2418 50%, #1c1710 100%);
+  padding: 60px 40px 50px;
+  text-align: center;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 40px,
+    rgba(218, 165, 32, 0.03) 40px, rgba(218, 165, 32, 0.03) 41px
+  );
+}
+.hero-badge {
+  display: inline-block;
+  border: 1px solid var(--gold);
+  color: var(--gold-light);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  padding: 6px 18px;
+  margin-bottom: 20px;
+  position: relative;
+}
+.hero h1 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 900;
+  font-size: clamp(28px, 5vw, 52px);
+  color: #f5f0e8;
+  letter-spacing: -0.5px;
+  line-height: 1.15;
+}
+.hero h1 span { color: var(--gold-light); }
+.hero .subtitle {
+  font-family: 'Source Serif 4', serif;
+  color: var(--ink-faint);
+  font-size: 15px;
+  margin-top: 12px;
+  font-style: italic;
+}
+
+/* ── TAB BAR ── */
+.tab-bar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--sidebar-bg);
+  border-bottom: 1px solid rgba(218, 165, 32, 0.2);
+  display: flex;
+  justify-content: center;
+  gap: 0;
+  padding: 0;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+}
+.tab-btn {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-weight: 500;
+  font-size: 13px;
+  color: var(--ink-faint);
+  background: none;
+  border: none;
+  padding: 16px 24px;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.3s;
+  white-space: nowrap;
+}
+.tab-btn:hover { color: var(--sidebar-text); }
+.tab-btn.active { color: var(--gold-light); }
+.tab-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 20%; right: 20%;
+  height: 2px;
+  background: var(--gold-light);
+}
+.tab-btn .tab-icon {
+  display: inline-block;
+  margin-right: 6px;
+  font-size: 14px;
+}
+
+/* ── MAIN LAYOUT ── */
+.main-container {
+  display: flex;
+  max-width: 1440px;
+  margin: 0 auto;
+  min-height: calc(100vh - 200px);
+}
+
+/* ── PAPER AREA ── */
+.paper-area {
+  flex: 1;
+  padding: 30px;
+  display: flex;
+  justify-content: center;
+}
+.paper {
+  background: var(--paper);
+  background-image:
+    radial-gradient(ellipse at 20% 0%, rgba(255,255,255,0.4) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 100%, rgba(0,0,0,0.03) 0%, transparent 50%);
+  max-width: 860px;
+  width: 100%;
+  padding: 50px 50px 60px;
+  box-shadow:
+    0 1px 3px var(--shadow),
+    0 8px 30px rgba(0,0,0,0.12),
+    inset 0 0 80px rgba(0,0,0,0.02);
+  border: 1px solid var(--paper-edge);
+  position: relative;
+  border-radius: 2px;
+}
+.paper::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg width='300' height='300' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  pointer-events: none;
+  border-radius: 2px;
+}
+.paper::after {
+  content: '';
+  position: absolute;
+  left: 0; top: 40px; bottom: 40px;
+  width: 1px;
+  background: repeating-linear-gradient(
+    to bottom, var(--red-ink) 0, var(--red-ink) 1px, transparent 1px, transparent 4px
+  );
+  opacity: 0.12;
+  margin-left: 45px;
+}
+
+/* ── STATEMENT STYLES ── */
+.stmt-header {
+  text-align: center;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid var(--ink);
+}
+.stmt-header h2 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  font-size: 20px;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+.stmt-header .stmt-sub {
+  font-family: 'Source Serif 4', serif;
+  font-size: 13px;
+  color: var(--ink-light);
+  font-style: italic;
+}
+.stmt-header .stmt-unit {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--ink-faint);
+  letter-spacing: 1px;
+  margin-top: 6px;
+  text-transform: uppercase;
+}
+
+/* ── TABLE ── */
+.fin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'Source Serif 4', serif;
+  font-size: 13.5px;
+  line-height: 1.6;
+}
+.fin-table th {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--ink-light);
+  text-align: right;
+  padding: 8px 6px;
+  border-bottom: 2px solid var(--ink);
+  font-weight: 500;
+}
+.fin-table th:first-child { text-align: left; }
+.fin-table td {
+  padding: 5px 6px;
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+  vertical-align: baseline;
+}
+.fin-table td:not(:first-child) {
+  text-align: right;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12.5px;
+  font-weight: 400;
+  white-space: nowrap;
+}
+.fin-table tr:hover {
+  background: rgba(218, 165, 32, 0.06);
+}
+.fin-table .section-head td {
+  font-weight: 600;
+  color: var(--ink);
+  padding-top: 16px;
+  font-size: 14px;
+  border-bottom: none;
+  letter-spacing: -0.2px;
+}
+.fin-table .subtotal td {
+  border-top: 1px solid var(--ink-faint);
+  font-weight: 600;
+  padding-top: 6px;
+}
+.fin-table .grand-total td {
+  border-top: 2px solid var(--ink);
+  border-bottom: 3px double var(--ink);
+  font-weight: 700;
+  font-size: 14px;
+  padding: 8px 6px;
+}
+.fin-table .indent td:first-child { padding-left: 22px; }
+.fin-table .indent2 td:first-child { padding-left: 40px; }
+
+.neg { color: var(--red-ink); }
+.pos-change { color: var(--green-ink); font-weight: 500; }
+.neg-change { color: var(--red-ink); font-weight: 500; }
+
+/* ── GLOSSARY TOOLTIP ── */
+.term {
+  border-bottom: 1px dotted var(--gold);
+  cursor: help;
+  position: relative;
+  transition: background 0.2s, color 0.2s;
+}
+.term:hover {
+  background: var(--highlight);
+  color: var(--ink);
+}
+
+.tooltip {
+  display: none;
+  position: fixed;
+  z-index: 9999;
+  background: var(--tooltip-bg);
+  color: var(--tooltip-text);
+  padding: 14px 18px;
+  border-radius: 6px;
+  max-width: 340px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 13px;
+  line-height: 1.65;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+  border: 1px solid rgba(218,165,32,0.2);
+  pointer-events: none;
+}
+.tooltip .tt-title {
+  font-weight: 700;
+  color: var(--gold-light);
+  margin-bottom: 6px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.tooltip .tt-title::before {
+  content: '📖';
+  font-size: 12px;
+}
+.tooltip .tt-body {
+  font-weight: 300;
+  color: #d4c9b5;
+}
+.tooltip.visible { display: block; animation: ttFade 0.2s ease; }
+
+@keyframes ttFade {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: 360px;
+  background: var(--sidebar-bg);
+  border-left: 1px solid rgba(218,165,32,0.15);
+  padding: 30px 24px;
+  color: var(--sidebar-text);
+  overflow-y: auto;
+  max-height: calc(100vh - 56px);
+  position: sticky;
+  top: 56px;
+}
+.sidebar h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px;
+  color: var(--gold-light);
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(218,165,32,0.2);
+}
+.sidebar h3 .s-icon { margin-right: 8px; font-size: 16px; }
+.insight-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(218,165,32,0.1);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 14px;
+  transition: border-color 0.3s, transform 0.2s;
+}
+.insight-card:hover {
+  border-color: rgba(218,165,32,0.3);
+  transform: translateX(-2px);
+}
+.insight-card .card-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--gold);
+  margin-bottom: 8px;
+}
+.insight-card .card-value {
+  font-family: 'Playfair Display', serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: #f5f0e8;
+  margin-bottom: 4px;
+}
+.insight-card .card-desc {
+  font-size: 12.5px;
+  color: #a0937f;
+  line-height: 1.6;
+  font-weight: 300;
+}
+.insight-card .card-bar {
+  height: 4px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 2px;
+  margin-top: 10px;
+  overflow: hidden;
+}
+.insight-card .card-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 1s ease;
+}
+
+.edu-block {
+  background: rgba(218, 165, 32, 0.06);
+  border-left: 3px solid var(--gold);
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  border-radius: 0 6px 6px 0;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #c8bfa8;
+}
+.edu-block strong { color: var(--gold-light); }
+
+/* ── CHANGE INDICATORS ── */
+.change-pill {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  margin-left: 4px;
+  font-weight: 500;
+}
+.change-pill.up {
+  background: rgba(39, 174, 96, 0.12);
+  color: var(--green-accent);
+}
+.change-pill.down {
+  background: rgba(192, 57, 43, 0.12);
+  color: var(--red-glow);
+}
+
+/* ── TAB CONTENT ── */
+.tab-content { display: none; }
+.tab-content.active { display: flex; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 1100px) {
+  .main-container { flex-direction: column; }
+  .sidebar {
+    width: 100%;
+    max-height: none;
+    position: static;
+    border-left: none;
+    border-top: 1px solid rgba(218,165,32,0.15);
+  }
+}
+@media (max-width: 700px) {
+  .paper { padding: 24px 18px 30px; }
+  .fin-table { font-size: 12px; }
+  .fin-table td:not(:first-child) { font-size: 11px; }
+  .tab-btn { padding: 12px 12px; font-size: 11px; }
+  .hero h1 { font-size: 24px; }
+}
+
+/* ── SCROLL BAR ── */
+.sidebar::-webkit-scrollbar { width: 5px; }
+.sidebar::-webkit-scrollbar-track { background: transparent; }
+.sidebar::-webkit-scrollbar-thumb { background: rgba(218,165,32,0.2); border-radius: 3px; }
+
+/* ── STAMP ── */
+.confidential-stamp {
+  position: absolute;
+  top: 20px; right: 20px;
+  border: 2px solid var(--red-ink);
+  color: var(--red-ink);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  transform: rotate(3deg);
+  opacity: 0.25;
+}
+
+/* ── LOADING ANIMATION ── */
+.paper { animation: paperIn 0.6s ease; }
+@keyframes paperIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-badge">SEC Filing · 10-Q · FY2026 Q3</div>
+  <h1><span>ORACLE</span> CORP</h1>
+  <h1 style="font-size: clamp(16px, 2.5vw, 24px); font-weight: 400; margin-top: 4px;">Condensed Consolidated Financial Statements</h1>
+  <div class="subtitle">교육 목적 재무제표 분석 · Nine months ended February 28, 2026</div>
+</div>
+
+<!-- TAB BAR -->
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('bs')"><span class="tab-icon">📋</span>재무상태표</button>
+  <button class="tab-btn" onclick="switchTab('is')"><span class="tab-icon">📊</span>손익계산서</button>
+  <button class="tab-btn" onclick="switchTab('cf')"><span class="tab-icon">💰</span>현금흐름표</button>
+</div>
+
+<!-- ═══════ BALANCE SHEET ═══════ -->
+<div class="tab-content active" id="tab-bs">
+<div class="main-container">
+<div class="paper-area">
+<div class="paper">
+  <div class="confidential-stamp">Educational Use</div>
+  <div class="stmt-header">
+    <h2>Condensed Consolidated Balance Sheets</h2>
+    <div class="stmt-sub">As of February 28, 2026 vs May 31, 2025</div>
+    <div class="stmt-unit">in millions of U.S. dollars</div>
+  </div>
+  <table class="fin-table">
+    <thead>
+      <tr><th style="width:52%"></th><th>FEB 2026</th><th>MAY 2025</th><th style="font-size:9px">변동</th></tr>
+    </thead>
+    <tbody>
+      <!-- ASSETS -->
+      <tr class="section-head"><td colspan="4">ASSETS</td></tr>
+      <tr class="section-head"><td colspan="4" style="font-size:13px; padding-top:8px"><em>Current Assets</em></td></tr>
+      <tr class="indent"><td><span class="term" data-term="cash">Cash and cash equivalents</span></td><td>38,455</td><td>10,786</td><td><span class="change-pill up">+256%</span></td></tr>
+      <tr class="indent"><td><span class="term" data-term="ms">Marketable securities</span></td><td>677</td><td>417</td><td><span class="change-pill up">+62%</span></td></tr>
+      <tr class="indent"><td><span class="term" data-term="ar">Trade receivables, net</span></td><td>10,719</td><td>8,558</td><td><span class="change-pill up">+25%</span></td></tr>
+      <tr class="indent"><td><span class="term" data-term="prepaid">Prepaid expenses &amp; other</span></td><td>5,023</td><td>4,818</td><td><span class="change-pill up">+4%</span></td></tr>
+      <tr class="subtotal indent"><td>Total current assets</td><td>54,874</td><td>24,579</td><td><span class="change-pill up">+123%</span></td></tr>
+
+      <tr class="section-head"><td colspan="4" style="font-size:13px; padding-top:8px"><em>Non-Current Assets</em></td></tr>
+      <tr class="indent"><td><span class="term" data-term="ppe">Property, plant &amp; equipment, net</span></td><td>83,617</td><td>43,522</td><td><span class="change-pill up">+92%</span></td></tr>
+      <tr class="indent"><td><span class="term" data-term="intangible">Intangible assets, net</span></td><td>3,641</td><td>4,587</td><td><span class="change-pill down">-21%</span></td></tr>
+      <tr class="indent"><td><span class="term" data-term="goodwill">Goodwill</span></td><td>62,274</td><td>62,207</td><td><span class="change-pill up">+0.1%</span></td></tr>
+      <tr class="indent"><td><span class="term" data-term="dta">Deferred tax assets</span></td><td>11,360</td><td>11,877</td><td><span class="change-pill down">-4%</span></td></tr>
+      <tr class="indent"><td>Other non-current assets</td><td>29,474</td><td>21,589</td><td><span class="change-pill up">+37%</span></td></tr>
+      <tr class="subtotal indent"><td>Total non-current assets</td><td>190,366</td><td>143,782</td><td><span class="change-pill up">+32%</span></td></tr>
+      <tr class="grand-total"><td><span class="term" data-term="ta">Total Assets</span></td><td>245,240</td><td>168,361</td><td><span class="change-pill up">+46%</span></td></tr>
+
+      <!-- LIABILITIES -->
+      <tr class="section-head"><td colspan="4" style="padding-top:24px">LIABILITIES &amp; STOCKHOLDERS' EQUITY</td></tr>
+      <tr class="section-head"><td colspan="4" style="font-size:13px; padding-top:8px"><em>Current Liabilities</em></td></tr>
+      <tr class="indent"><td><span class="term" data-term="stdebt">Notes payable &amp; borrowings, current</span></td><td>9,887</td><td>7,271</td><td><span class="change-pill up">+36%</span></td></tr>
+      <tr class="indent"><td><span class="term" data-term="ap">Accounts payable</span></td><td>9,474</td><td>5,113</td><td><span class="change-pill up">+85%</span></td></tr>
+      <tr class="indent"><td>Accrued compensation</td><td>1,940</td><td>2,243</td><td><span class="change-pill down">-14%</span></td></tr>
+      <tr class="indent"><td><span class="term" data-term="dr">Deferred revenues</span></td><td>9,881</td><td>9,387</td><td><span class="change-pill up">+5%</span></td></tr>
+      <tr class="indent"><td>Other current liabilities</td><td>9,555</td><td>8,629</td><td><span class="change-pill up">+11%</span></td></tr>
+      <tr class="subtotal indent"><td>Total current liabilities</td><td>40,737</td><td>32,643</td><td><span class="change-pill up">+25%</span></td></tr>
+
+      <tr class="section-head"><td colspan="4" style="font-size:13px; padding-top:8px"><em>Non-Current Liabilities</em></td></tr>
+      <tr class="indent"><td><span class="term" data-term="ltdebt">Notes payable &amp; borrowings, non-current</span></td><td>124,718</td><td>85,297</td><td><span class="change-pill up">+46%</span></td></tr>
+      <tr class="indent"><td>Income taxes payable</td><td>11,402</td><td>10,269</td><td><span class="change-pill up">+11%</span></td></tr>
+      <tr class="indent"><td><span class="term" data-term="lease">Operating lease liabilities</span></td><td>18,512</td><td>11,536</td><td><span class="change-pill up">+60%</span></td></tr>
+      <tr class="indent"><td>Other non-current liabilities</td><td>10,820</td><td>7,647</td><td><span class="change-pill up">+42%</span></td></tr>
+      <tr class="subtotal indent"><td>Total non-current liabilities</td><td>165,452</td><td>114,749</td><td><span class="change-pill up">+44%</span></td></tr>
+
+      <tr class="section-head"><td colspan="4" style="font-size:13px; padding-top:12px"><em>Stockholders' Equity</em></td></tr>
+      <tr class="indent"><td><span class="term" data-term="pref">Preferred stock + APIC</span></td><td>4,954</td><td>0</td><td><span class="change-pill up">NEW</span></td></tr>
+      <tr class="indent"><td><span class="term" data-term="apic">Common stock + APIC</span></td><td>41,910</td><td>37,107</td><td><span class="change-pill up">+13%</span></td></tr>
+      <tr class="indent"><td><span class="term" data-term="re">Accumulated deficit</span></td><td class="neg">(7,092)</td><td class="neg">(15,481)</td><td><span class="change-pill up">+54%</span></td></tr>
+      <tr class="indent"><td><span class="term" data-term="aoci">Accum. other comprehensive loss</span></td><td class="neg">(1,277)</td><td class="neg">(1,175)</td><td><span class="change-pill down">-9%</span></td></tr>
+      <tr class="subtotal indent"><td>Total stockholders' equity</td><td>39,051</td><td>20,969</td><td><span class="change-pill up">+86%</span></td></tr>
+      <tr class="grand-total"><td>Total Liab. + Equity</td><td>245,240</td><td>168,361</td><td><span class="change-pill up">+46%</span></td></tr>
+    </tbody>
+  </table>
+</div>
+</div>
+
+<!-- SIDEBAR BS -->
+<div class="sidebar">
+  <h3><span class="s-icon">🔍</span>재무상태표 핵심 분석</h3>
+
+  <div class="edu-block">
+    <strong>재무상태표(Balance Sheet)</strong>란 특정 시점의 기업 재무 상태를 보여주는 '스냅샷'입니다. <strong>자산 = 부채 + 자본</strong>이라는 회계등식이 항상 성립합니다.
+  </div>
+
+  <div class="insight-card">
+    <div class="card-label">현금 폭증</div>
+    <div class="card-value" style="color: #27ae60;">+$27.7B</div>
+    <div class="card-desc">현금이 9개월 만에 $10.8B → $38.5B로 256% 증가. 대규모 차입(사채 발행 $44.5B)을 통해 AI 인프라 투자를 위한 자금을 선제적으로 확보한 결과입니다.</div>
+  </div>
+
+  <div class="insight-card">
+    <div class="card-label">유형자산 (PP&E) 급증</div>
+    <div class="card-value">$83.6B</div>
+    <div class="card-desc">전기 대비 92% 증가. 클라우드 데이터센터·GPU 인프라에 대한 공격적 투자($39.2B CAPEX)를 반영합니다. Oracle의 OCI(Oracle Cloud Infrastructure) 확장 전략이 재무제표에 그대로 드러납니다.</div>
+    <div class="card-bar"><div class="card-bar-fill" style="width:92%; background: linear-gradient(90deg, var(--gold), var(--gold-light))"></div></div>
+  </div>
+
+  <div class="insight-card">
+    <div class="card-label">장기 부채</div>
+    <div class="card-value" style="color: #c0392b;">$124.7B</div>
+    <div class="card-desc">전기 $85.3B에서 46% 증가. 부채비율(D/E)이 약 5.3x로 높은 레버리지. 저금리 시기 발행한 사채와 신규 차입이 혼합되어 있습니다. 이자비용 부담 증가에 유의해야 합니다.</div>
+    <div class="card-bar"><div class="card-bar-fill" style="width:76%; background: linear-gradient(90deg, #c0392b, #e74c3c)"></div></div>
+  </div>
+
+  <div class="insight-card">
+    <div class="card-label">자기자본 회복</div>
+    <div class="card-value" style="color: #f5f0e8;">$39.1B</div>
+    <div class="card-desc">누적결손금이 $(15.5B) → $(7.1B)로 크게 축소. 순이익 누적, 전환우선주($5.0B) 발행, 자사주 매입 축소 등이 복합적으로 작용했습니다.</div>
+  </div>
+
+  <div class="edu-block">
+    <strong>💡 회계등식 검증:</strong><br>
+    자산 $245,240 = 부채($40,737 + $165,452) + 자본 $39,051 = $245,240 ✓
+  </div>
+</div>
+</div>
+</div>
+
+<!-- ═══════ INCOME STATEMENT ═══════ -->
+<div class="tab-content" id="tab-is">
+<div class="main-container">
+<div class="paper-area">
+<div class="paper">
+  <div class="confidential-stamp">Educational Use</div>
+  <div class="stmt-header">
+    <h2>Condensed Consolidated Statements of Operations</h2>
+    <div class="stmt-sub">Three &amp; Nine months ended February 28, 2026 vs 2025</div>
+    <div class="stmt-unit">in millions of U.S. dollars, except per-share</div>
+  </div>
+  <table class="fin-table">
+    <thead>
+      <tr><th style="width:34%"></th><th>3M 2026</th><th>3M 2025</th><th>9M 2026</th><th>9M 2025</th></tr>
+    </thead>
+    <tbody>
+      <tr class="section-head"><td colspan="5">REVENUE</td></tr>
+      <tr class="indent"><td><span class="term" data-term="cloud">Cloud services &amp; license support</span></td><td>8,914</td><td>6,210</td><td>24,076</td><td>17,769</td></tr>
+      <tr class="indent"><td><span class="term" data-term="license">Cloud license &amp; on-premise license</span></td><td>6,119</td><td>5,926</td><td>17,717</td><td>17,756</td></tr>
+      <tr class="indent"><td>Hardware</td><td>714</td><td>703</td><td>2,160</td><td>2,086</td></tr>
+      <tr class="indent"><td>Services</td><td>1,443</td><td>1,291</td><td>4,220</td><td>3,885</td></tr>
+      <tr class="subtotal"><td><span class="term" data-term="rev">Total Revenues</span></td><td>17,190</td><td>14,130</td><td>48,173</td><td>41,496</td></tr>
+
+      <tr class="section-head"><td colspan="5">OPERATING EXPENSES</td></tr>
+      <tr class="indent"><td><span class="term" data-term="cogs">Cloud &amp; software COGS</span></td><td>4,776</td><td>2,882</td><td>12,373</td><td>8,226</td></tr>
+      <tr class="indent"><td>Hardware COGS</td><td>183</td><td>197</td><td>576</td><td>530</td></tr>
+      <tr class="indent"><td>Services COGS</td><td>1,133</td><td>1,116</td><td>3,401</td><td>3,430</td></tr>
+      <tr class="indent"><td><span class="term" data-term="sm">Sales &amp; marketing</span></td><td>2,052</td><td>2,119</td><td>6,263</td><td>6,345</td></tr>
+      <tr class="indent"><td><span class="term" data-term="rd">Research &amp; development</span></td><td>2,607</td><td>2,429</td><td>7,658</td><td>7,206</td></tr>
+      <tr class="indent"><td>General &amp; administrative</td><td>389</td><td>390</td><td>1,174</td><td>1,135</td></tr>
+      <tr class="indent"><td><span class="term" data-term="amort">Amortization of intangibles</span></td><td>413</td><td>548</td><td>1,239</td><td>1,763</td></tr>
+      <tr class="indent"><td>Acquisition related &amp; other</td><td>20</td><td>28</td><td>55</td><td>72</td></tr>
+      <tr class="indent"><td><span class="term" data-term="restruct">Restructuring</span></td><td>153</td><td>63</td><td>961</td><td>220</td></tr>
+      <tr class="subtotal"><td>Total operating expenses</td><td>11,726</td><td>9,772</td><td>33,700</td><td>28,927</td></tr>
+
+      <tr class="subtotal"><td><span class="term" data-term="opinc">Operating Income</span></td><td>5,464</td><td>4,358</td><td>14,473</td><td>12,569</td></tr>
+      <tr class="indent"><td><span class="term" data-term="intexp">Interest expense</span></td><td class="neg">(1,180)</td><td class="neg">(892)</td><td class="neg">(3,160)</td><td class="neg">(2,600)</td></tr>
+      <tr class="indent"><td>Non-operating income, net</td><td>132</td><td class="neg">(18)</td><td>2,872</td><td>39</td></tr>
+      <tr class="subtotal"><td>Income before income taxes</td><td>4,416</td><td>3,448</td><td>14,185</td><td>10,008</td></tr>
+      <tr class="indent"><td><span class="term" data-term="tax">Provision for income taxes</span></td><td>695</td><td>512</td><td>1,402</td><td>992</td></tr>
+      <tr class="grand-total"><td><span class="term" data-term="ni">Net Income</span></td><td>3,721</td><td>2,936</td><td>12,783</td><td>9,016</td></tr>
+      <tr class="indent" style="border-top: none"><td>Preferred stock dividends</td><td class="neg">(22)</td><td>0</td><td class="neg">(22)</td><td>0</td></tr>
+      <tr class="subtotal"><td>Net income to common</td><td>3,699</td><td>2,936</td><td>12,761</td><td>9,016</td></tr>
+      <tr><td colspan="5" style="padding-top: 14px; font-size: 12px; color: var(--ink-light);">Earnings per share:</td></tr>
+      <tr class="indent"><td><span class="term" data-term="eps">Basic EPS</span></td><td>$1.29</td><td>$1.05</td><td>$4.47</td><td>$3.24</td></tr>
+      <tr class="indent"><td><span class="term" data-term="deps">Diluted EPS</span></td><td>$1.27</td><td>$1.02</td><td>$4.38</td><td>$3.15</td></tr>
+    </tbody>
+  </table>
+</div>
+</div>
+
+<!-- SIDEBAR IS -->
+<div class="sidebar">
+  <h3><span class="s-icon">📊</span>손익계산서 핵심 분석</h3>
+
+  <div class="edu-block">
+    <strong>손익계산서(Income Statement)</strong>는 일정 기간 동안의 수익과 비용을 보여줍니다. '얼마를 벌었고, 얼마를 썼고, 얼마가 남았는가'를 알 수 있는 가장 중요한 재무제표 중 하나입니다.
+  </div>
+
+  <div class="insight-card">
+    <div class="card-label">클라우드 매출 폭발</div>
+    <div class="card-value" style="color: #27ae60;">+44% YoY</div>
+    <div class="card-desc">3M 기준 Cloud 매출 $6.2B → $8.9B. Oracle의 OCI가 AI 워크로드 수요에 힘입어 빠르게 성장 중. 전체 매출에서 클라우드 비중이 52%로 과반을 돌파했습니다.</div>
+    <div class="card-bar"><div class="card-bar-fill" style="width:52%; background: linear-gradient(90deg, #2980b9, #3498db)"></div></div>
+  </div>
+
+  <div class="insight-card">
+    <div class="card-label">영업이익률 (Operating Margin)</div>
+    <div class="card-value">31.8%</div>
+    <div class="card-desc">3M 기준 OP margin 31.8% (전년 30.8%). 클라우드 인프라 비용(COGS) 급증에도 매출 성장이 이를 상쇄하여 마진이 오히려 개선되었습니다.</div>
+  </div>
+
+  <div class="insight-card">
+    <div class="card-label">이자 비용 부담</div>
+    <div class="card-value" style="color: #c0392b;">$3.16B</div>
+    <div class="card-desc">9M 기준 전년 $2.6B 대비 22% 증가. 대규모 차입의 직접적 대가입니다. 영업이익 대비 이자보상배율(ICR)은 약 4.6x로, 아직 안정권이지만 모니터링이 필요합니다.</div>
+  </div>
+
+  <div class="insight-card">
+    <div class="card-label">순이익 성장</div>
+    <div class="card-value" style="color: #f5f0e8;">+42% (9M)</div>
+    <div class="card-desc">9M 순이익 $9.0B → $12.8B. 클라우드 매출 성장 + 영업 레버리지 효과 + 비영업수익(투자 이익 $2.9B)이 복합적으로 기여했습니다.</div>
+  </div>
+
+  <div class="edu-block">
+    <strong>💡 매출원가율 주의:</strong> Cloud COGS가 3M 기준 66% 급증($2.9B→$4.8B). 데이터센터 감가상각·전력 비용이 빠르게 늘고 있어, 향후 마진 압박 가능성이 있습니다.
+  </div>
+</div>
+</div>
+</div>
+
+<!-- ═══════ CASH FLOW ═══════ -->
+<div class="tab-content" id="tab-cf">
+<div class="main-container">
+<div class="paper-area">
+<div class="paper">
+  <div class="confidential-stamp">Educational Use</div>
+  <div class="stmt-header">
+    <h2>Condensed Consolidated Statements of Cash Flows</h2>
+    <div class="stmt-sub">Nine months ended February 28, 2026 vs 2025</div>
+    <div class="stmt-unit">in millions of U.S. dollars</div>
+  </div>
+  <table class="fin-table">
+    <thead>
+      <tr><th style="width:58%"></th><th>9M 2026</th><th>9M 2025</th></tr>
+    </thead>
+    <tbody>
+      <tr class="section-head"><td colspan="3"><span class="term" data-term="cfo">Cash Flows from Operating Activities</span></td></tr>
+      <tr class="indent"><td>Net income</td><td>12,783</td><td>9,016</td></tr>
+      <tr class="indent2"><td><span class="term" data-term="dep">Depreciation</span></td><td>5,208</td><td>2,715</td></tr>
+      <tr class="indent2"><td>Amortization of intangibles</td><td>1,239</td><td>1,763</td></tr>
+      <tr class="indent2"><td>Deferred income taxes</td><td class="neg">(295)</td><td class="neg">(1,097)</td></tr>
+      <tr class="indent2"><td><span class="term" data-term="sbc">Stock-based compensation</span></td><td>3,608</td><td>3,374</td></tr>
+      <tr class="indent2"><td>Gains from investments, net</td><td class="neg">(2,149)</td><td>422</td></tr>
+      <tr class="indent2"><td>Increase in trade receivables</td><td class="neg">(2,201)</td><td class="neg">(312)</td></tr>
+      <tr class="indent2"><td>Decrease in prepaid &amp; other</td><td>1,386</td><td>603</td></tr>
+      <tr class="indent2"><td>Decrease in AP &amp; other liab.</td><td class="neg">(821)</td><td class="neg">(633)</td></tr>
+      <tr class="indent2"><td>Decrease in income taxes payable</td><td class="neg">(1,651)</td><td class="neg">(1,222)</td></tr>
+      <tr class="indent2"><td>Increase in deferred revenues</td><td>250</td><td>35</td></tr>
+      <tr class="subtotal"><td><span class="term" data-term="ncfo">Net cash from operations</span></td><td>17,357</td><td>14,664</td></tr>
+
+      <tr class="section-head"><td colspan="3"><span class="term" data-term="cfi">Cash Flows from Investing Activities</span></td></tr>
+      <tr class="indent"><td>Purchases of securities &amp; investments</td><td class="neg">(1,663)</td><td class="neg">(838)</td></tr>
+      <tr class="indent"><td>Proceeds from sales of securities</td><td>4,857</td><td>444</td></tr>
+      <tr class="indent"><td><span class="term" data-term="capex">Capital expenditures</span></td><td class="neg">(39,170)</td><td class="neg">(12,135)</td></tr>
+      <tr class="subtotal"><td>Net cash used for investing</td><td class="neg">(35,976)</td><td class="neg">(12,529)</td></tr>
+
+      <tr class="section-head"><td colspan="3"><span class="term" data-term="cff">Cash Flows from Financing Activities</span></td></tr>
+      <tr class="indent"><td>Proceeds from common stock issuance</td><td>1,317</td><td>520</td></tr>
+      <tr class="indent"><td>Repurchases of common stock</td><td class="neg">(95)</td><td class="neg">(450)</td></tr>
+      <tr class="indent"><td>Tax withholding share repurchases</td><td class="neg">(111)</td><td class="neg">(900)</td></tr>
+      <tr class="indent"><td><span class="term" data-term="convpref">Mandatory convertible preferred proceeds</span></td><td>4,954</td><td>0</td></tr>
+      <tr class="indent"><td><span class="term" data-term="div">Dividends to stockholders</span></td><td class="neg">(4,285)</td><td class="neg">(3,340)</td></tr>
+      <tr class="indent"><td>Commercial paper &amp; short-term, net</td><td>2,279</td><td class="neg">(396)</td></tr>
+      <tr class="indent"><td><span class="term" data-term="debtissue">Proceeds from borrowings</span></td><td>44,544</td><td>19,548</td></tr>
+      <tr class="indent"><td>Repayments of borrowings</td><td class="neg">(2,193)</td><td class="neg">(9,771)</td></tr>
+      <tr class="indent"><td>Other financing, net</td><td class="neg">(215)</td><td class="neg">(299)</td></tr>
+      <tr class="subtotal"><td>Net cash from financing</td><td>46,195</td><td>4,912</td></tr>
+
+      <tr class="indent"><td>FX effect on cash</td><td>93</td><td class="neg">(95)</td></tr>
+      <tr class="subtotal"><td><span class="term" data-term="netcash">Net increase in cash</span></td><td>27,669</td><td>6,952</td></tr>
+      <tr class="indent"><td>Cash at beginning of period</td><td>10,786</td><td>10,454</td></tr>
+      <tr class="grand-total"><td>Cash at end of period</td><td>38,455</td><td>17,406</td></tr>
+    </tbody>
+  </table>
+</div>
+</div>
+
+<!-- SIDEBAR CF -->
+<div class="sidebar">
+  <h3><span class="s-icon">💰</span>현금흐름표 핵심 분석</h3>
+
+  <div class="edu-block">
+    <strong>현금흐름표(Cash Flow Statement)</strong>는 실제 현금의 유입·유출을 보여줍니다. 손익계산서의 이익은 '발생주의'이지만, 현금흐름은 '현금주의'로 기업의 실제 자금력을 파악하는 데 핵심입니다.
+  </div>
+
+  <div class="insight-card">
+    <div class="card-label">영업현금흐름 (OCF)</div>
+    <div class="card-value" style="color: #27ae60;">$17.4B</div>
+    <div class="card-desc">전년 $14.7B 대비 18% 증가. 순이익 증가 + 감가상각비 $5.2B(전년 $2.7B의 2배)가 주된 동인. 감가상각비는 현금유출이 아닌 비현금 비용이므로 순이익에 다시 더해집니다.</div>
+  </div>
+
+  <div class="insight-card">
+    <div class="card-label">CAPEX (설비투자)</div>
+    <div class="card-value" style="color: #c0392b;">$39.2B</div>
+    <div class="card-desc">전년 $12.1B 대비 <strong>3.2배 폭증</strong>. AI 데이터센터·GPU 클러스터 구축에 사상 최대 규모 투자. 영업현금흐름($17.4B)을 훨씬 초과하여, 차입으로 자금을 조달하고 있습니다.</div>
+    <div class="card-bar"><div class="card-bar-fill" style="width:100%; background: linear-gradient(90deg, #c0392b, #e74c3c)"></div></div>
+  </div>
+
+  <div class="insight-card">
+    <div class="card-label">Free Cash Flow</div>
+    <div class="card-value" style="color: #e74c3c;">−$21.8B</div>
+    <div class="card-desc">FCF = OCF − CAPEX = $17.4B − $39.2B. 마이너스 FCF는 '성장 투자기'를 의미합니다. Amazon도 AWS 초기에 유사한 패턴을 보였습니다. 핵심은 이 투자가 미래 수익으로 전환되느냐입니다.</div>
+  </div>
+
+  <div class="insight-card">
+    <div class="card-label">차입 순증</div>
+    <div class="card-value" style="color: #f5f0e8;">+$42.4B net</div>
+    <div class="card-desc">사채 발행 $44.5B − 상환 $2.2B. 전환우선주 $5.0B도 추가 발행. CAPEX 자금을 대부분 외부 차입으로 충당하는 구조입니다.</div>
+  </div>
+
+  <div class="edu-block">
+    <strong>💡 3가지 현금흐름의 관계:</strong><br>
+    영업(+$17.4B) + 투자(−$36.0B) + 재무(+$46.2B) + FX(+$0.1B) = 순증 +$27.7B<br><br>
+    <strong>건강한 기업의 전형:</strong> 영업 (+), 투자 (−), 재무 (±)<br>
+    <strong>Oracle 현재:</strong> 영업 (+), 투자 (−−−), 재무 (+++) → <em>공격적 성장 투자기</em>
+  </div>
+</div>
+</div>
+</div>
+
+<!-- SOURCE -->
+<div style="text-align:center; padding:20px; color: var(--ink-faint); font-size:11px; font-family:'JetBrains Mono',monospace;">
+  Source: <a href="https://www.sec.gov/Archives/edgar/data/1341439/000119312526101045/orcl-20260228.htm" target="_blank" style="color:var(--gold);text-decoration:none;">Oracle 10-Q SEC Filing</a> · Educational purposes only
+</div>
+
+<!-- TOOLTIP ELEMENT -->
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+// ── TAB SWITCHING ──
+function switchTab(id) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  event.currentTarget.classList.add('active');
+}
+
+// ── GLOSSARY ──
+const glossary = {
+  cash: { title: 'Cash and Cash Equivalents (현금 및 현금성자산)', body: '즉시 사용 가능한 현금과 만기 3개월 이내의 단기 금융상품(예: 머니마켓펀드, 단기국채). 유동성의 가장 핵심 지표입니다.' },
+  ms: { title: 'Marketable Securities (유가증권)', body: '공개 시장에서 거래 가능한 주식·채권 등의 금융자산. 현금보다는 유동성이 낮지만, 비교적 빠르게 현금화할 수 있습니다.' },
+  ar: { title: 'Trade Receivables (매출채권)', body: '제품·서비스를 제공했지만 아직 받지 못한 대금. "net"은 대손충당금(회수 불가능 추정액)을 차감한 순액입니다.' },
+  prepaid: { title: 'Prepaid Expenses (선급비용)', body: '미래 기간의 비용을 미리 지불한 것. 예: 1년치 보험료를 선납하면, 미경과 기간분이 선급비용으로 자산에 기록됩니다.' },
+  ppe: { title: 'PP&E (유형자산)', body: 'Property, Plant & Equipment. 토지, 건물, 서버, 데이터센터 장비 등 물리적 자산. "net"은 감가상각누계액을 차감한 장부가액입니다.' },
+  intangible: { title: 'Intangible Assets (무형자산)', body: '특허, 기술, 고객관계, 브랜드 등 물리적 형태가 없는 자산. 인수합병(M&A) 시 식별된 무형자산이 대부분이며, 일정 기간에 걸쳐 상각됩니다.' },
+  goodwill: { title: 'Goodwill (영업권)', body: '인수합병 시 지불한 가격이 피인수기업 순자산의 공정가치를 초과하는 부분. 상각하지 않고, 매년 손상검사를 실시합니다. Oracle의 $62B 영업권은 주로 PeopleSoft, Sun, Cerner 등의 인수에서 발생했습니다.' },
+  dta: { title: 'Deferred Tax Assets (이연법인세자산)', body: '미래에 세금을 줄여줄 수 있는 일시적 차이. 예: 세무상 이월결손금이 있으면, 향후 이익이 발생할 때 세금을 줄일 수 있는 권리가 자산으로 기록됩니다.' },
+  ta: { title: 'Total Assets (총자산)', body: '기업이 보유한 모든 경제적 자원의 합계. 유동자산 + 비유동자산. 회계등식에서 부채 + 자본과 항상 일치해야 합니다.' },
+  stdebt: { title: 'Notes Payable, Current (단기차입금)', body: '1년 이내에 상환해야 하는 차입금. 상업어음(CP), 단기 은행대출, 장기 부채 중 1년 내 만기 도래분 등이 포함됩니다.' },
+  ap: { title: 'Accounts Payable (매입채무)', body: '공급업체로부터 재화·용역을 받았지만 아직 지급하지 않은 대금. 데이터센터 장비 구매 대금이 급증하면서 85% 증가했습니다.' },
+  dr: { title: 'Deferred Revenues (이연수익)', body: '대금은 받았지만 아직 서비스를 제공하지 않은 부분. SaaS 기업의 연간 구독료 선수취분이 대표적. "선수수익" 또는 "계약부채"라고도 합니다.' },
+  ltdebt: { title: 'Long-term Debt (장기차입금)', body: '만기가 1년을 초과하는 차입금. 회사채(Senior Notes), 텀론(Term Loan) 등. Oracle은 AI 인프라 투자를 위해 대규모 사채를 발행했습니다.' },
+  lease: { title: 'Operating Lease Liabilities (운용리스부채)', body: 'IFRS 16/ASC 842에 따라 인식되는 리스 의무. 데이터센터 부지·사무실 임차 계약이 부채로 기록됩니다. 60% 증가는 클라우드 인프라 확장을 반영합니다.' },
+  pref: { title: 'Preferred Stock (우선주)', body: '보통주보다 배당 우선권이 있는 주식. Oracle이 새로 발행한 "Mandatory Convertible Preferred"는 일정 기간 후 보통주로 자동 전환됩니다.' },
+  apic: { title: 'Common Stock + APIC (보통주 + 주식발행초과금)', body: '보통주의 액면가와 액면가를 초과하여 받은 금액의 합계. 주식보상(SBC)이나 신규 발행 시 증가합니다.' },
+  re: { title: 'Accumulated Deficit (누적결손금)', body: '설립 이래 누적 순이익에서 배당 등을 차감한 잔액이 마이너스인 상태. Oracle은 과거 대규모 자사주 매입으로 결손이 누적되었으나, 최근 이익 누적으로 빠르게 회복 중입니다.' },
+  aoci: { title: 'AOCI (기타포괄손익누계액)', body: '손익계산서를 거치지 않고 자본에 직접 반영되는 항목의 누적액. 외화환산조정, 유가증권 평가손익 등이 포함됩니다.' },
+  cloud: { title: 'Cloud Revenue (클라우드 매출)', body: 'OCI(Oracle Cloud Infrastructure) 이용료, SaaS(Fusion ERP, HCM 등) 구독료, 클라우드 라이선스 지원 수익. Oracle 성장의 핵심 동력입니다.' },
+  license: { title: 'Software Revenue (소프트웨어 매출)', body: '온프레미스 소프트웨어 라이선스 판매와 클라우드 라이선스 수익. Database, Middleware 등 전통적인 소프트웨어 매출이 여전히 큰 비중을 차지합니다.' },
+  rev: { title: 'Total Revenues (총매출)', body: '기업이 본업에서 벌어들인 총 수입. 모든 세그먼트(클라우드, 소프트웨어, 하드웨어, 서비스) 매출의 합계입니다.' },
+  cogs: { title: 'COGS (매출원가)', body: 'Cost of Goods Sold. 서비스 제공에 직접 들어가는 비용. 클라우드의 경우 데이터센터 운영비, 서버 감가상각, 전력·냉각 비용, 네트워크 비용 등이 포함됩니다.' },
+  sm: { title: 'Sales & Marketing (판매관리비)', body: '영업 인력 급여, 마케팅 캠페인, 광고, 파트너 수수료 등. 전년 대비 소폭 감소한 것은 효율화 노력을 반영합니다.' },
+  rd: { title: 'R&D (연구개발비)', body: '신제품·기술 개발에 투자하는 비용. AI, 클라우드 플랫폼, 데이터베이스 기술 연구 등. 미래 경쟁력의 원천이지만, 당기 비용으로 처리됩니다.' },
+  amort: { title: 'Amortization (무형자산상각비)', body: '인수합병으로 취득한 무형자산(기술, 고객관계 등)을 내용연수에 걸쳐 체계적으로 비용화하는 것. 감소 추세는 과거 인수 관련 자산이 점차 상각 완료되고 있음을 의미합니다.' },
+  restruct: { title: 'Restructuring (구조조정비)', body: '사업 구조 재편에 따른 일회성 비용. 인력 감축, 사업부 정리, 시설 폐쇄 등. 9M에 $961M으로 급증한 것은 대규모 조직 개편이 있었음을 시사합니다.' },
+  opinc: { title: 'Operating Income (영업이익)', body: '본업에서 벌어들인 이익. 매출 − 매출원가 − 판관비. 기업의 핵심 수익 창출 능력을 보여주는 가장 중요한 지표 중 하나입니다.' },
+  intexp: { title: 'Interest Expense (이자비용)', body: '차입금에 대해 지불하는 이자. 부채가 많을수록 이자비용도 커집니다. 영업이익 대비 이자비용의 비율(이자보상배율)이 기업의 부채 상환 능력을 나타냅니다.' },
+  tax: { title: 'Income Tax (법인세)', body: '기업이 정부에 납부하는 세금. 유효세율 = 법인세/세전이익. Oracle의 9M 유효세율은 약 9.9%로, 해외 소득·세액공제 등으로 미국 법정세율(21%)보다 낮습니다.' },
+  ni: { title: 'Net Income (순이익)', body: '모든 비용과 세금을 차감한 후 최종적으로 주주에게 귀속되는 이익. "Bottom Line"이라고도 합니다. 배당 원천이자 자본 축적의 기반입니다.' },
+  eps: { title: 'Basic EPS (기본 주당순이익)', body: '순이익 ÷ 가중평균 보통주식수. 주주 1주당 얼마의 이익이 발생했는지 보여줍니다. 주식 투자에서 가장 널리 사용되는 수익성 지표입니다.' },
+  deps: { title: 'Diluted EPS (희석 주당순이익)', body: '스톡옵션, 전환사채, 전환우선주 등이 모두 보통주로 전환된다고 가정한 EPS. 기본 EPS보다 항상 같거나 낮습니다. 잠재적 희석 효과를 반영한 보수적 지표입니다.' },
+  cfo: { title: 'Operating Cash Flow (영업활동 현금흐름)', body: '본업에서 실제로 창출한 현금. 순이익에서 출발하여 비현금 항목(감가상각 등)을 더하고, 운전자본 변동을 조정합니다. "간접법"으로 작성됩니다.' },
+  dep: { title: 'Depreciation (감가상각비)', body: '유형자산의 가치 감소를 일정 기간에 걸쳐 비용으로 인식하는 것. 실제 현금 유출이 아니므로, 현금흐름표에서는 순이익에 다시 더해줍니다(가산 조정).' },
+  sbc: { title: 'Stock-Based Compensation (주식보상비)', body: '임직원에게 급여 대신 스톡옵션·RSU 등을 지급하는 비현금 비용. 손익에서는 비용으로 차감되지만, 실제 현금 유출이 없으므로 현금흐름에서 가산됩니다.' },
+  ncfo: { title: 'Net Cash from Operations (영업현금흐름 순액)', body: '순이익에 모든 비현금 항목 및 운전자본 변동을 조정한 실제 영업 현금. 이 숫자가 양수이면 본업에서 현금이 창출되고 있다는 의미입니다.' },
+  cfi: { title: 'Investing Cash Flow (투자활동 현금흐름)', body: '장기 자산의 취득·처분에 관한 현금 흐름. CAPEX(설비투자), 투자유가증권 매매, 기업 인수 등이 포함됩니다. 성장 기업은 보통 (-)입니다.' },
+  capex: { title: 'Capital Expenditures (자본적 지출)', body: '데이터센터, 서버, 건물 등 장기 자산 취득에 사용한 현금. "투자"의 핵심 항목. FCF(잉여현금흐름) = 영업현금흐름 − CAPEX로 계산합니다.' },
+  cff: { title: 'Financing Cash Flow (재무활동 현금흐름)', body: '자금 조달·상환에 관한 현금 흐름. 차입금 조달·상환, 주식 발행·자사주 매입, 배당금 지급 등이 포함됩니다.' },
+  convpref: { title: 'Mandatory Convertible Preferred (강제전환우선주)', body: '일정 기간 후 보통주로 의무 전환되는 우선주. 전환 전까지 우선 배당을 받고, 전환 후에는 보통주와 동일해집니다. 부채가 아닌 자본으로 분류됩니다.' },
+  div: { title: 'Dividends (배당금)', body: '이익의 일부를 주주에게 현금으로 분배하는 것. Oracle은 9M간 $4.3B(전년 $3.3B)을 배당했으며, 이는 주주환원 정책의 확대를 의미합니다.' },
+  debtissue: { title: 'Debt Issuance (차입금 조달)', body: '회사채(Senior Notes)나 은행 대출(Term Loan) 등을 통해 조달한 현금. $44.5B는 Oracle 역사상 최대 규모의 차입입니다.' },
+  netcash: { title: 'Net Increase in Cash (현금 순증)', body: '영업·투자·재무 활동의 현금흐름과 환율 효과를 모두 합산한 최종 현금 변동분. 재무상태표의 현금 변동과 일치해야 합니다.' },
+};
+
+// ── TOOLTIP LOGIC ──
+const tooltip = document.getElementById('tooltip');
+let activeTooltipEl = null;
+
+document.addEventListener('mouseover', (e) => {
+  const term = e.target.closest('.term');
+  if (!term) return;
+  const key = term.dataset.term;
+  const info = glossary[key];
+  if (!info) return;
+  activeTooltipEl = term;
+
+  tooltip.innerHTML = `<div class="tt-title">${info.title}</div><div class="tt-body">${info.body}</div>`;
+  tooltip.classList.add('visible');
+  positionTooltip(e);
+});
+
+document.addEventListener('mousemove', (e) => {
+  if (activeTooltipEl && tooltip.classList.contains('visible')) {
+    positionTooltip(e);
+  }
+});
+
+document.addEventListener('mouseout', (e) => {
+  const term = e.target.closest('.term');
+  if (term) {
+    tooltip.classList.remove('visible');
+    activeTooltipEl = null;
+  }
+});
+
+function positionTooltip(e) {
+  const pad = 16;
+  let x = e.clientX + pad;
+  let y = e.clientY + pad;
+  const tw = 340;
+  const th = tooltip.offsetHeight || 150;
+
+  if (x + tw > window.innerWidth - pad) x = e.clientX - tw - pad;
+  if (y + th > window.innerHeight - pad) y = e.clientY - th - pad;
+
+  tooltip.style.left = x + 'px';
+  tooltip.style.top = y + 'px';
+}
+
+// ── TOUCH SUPPORT ──
+document.addEventListener('touchstart', (e) => {
+  const term = e.target.closest('.term');
+  if (!term) {
+    tooltip.classList.remove('visible');
+    activeTooltipEl = null;
+    return;
+  }
+  const key = term.dataset.term;
+  const info = glossary[key];
+  if (!info) return;
+  e.preventDefault();
+
+  tooltip.innerHTML = `<div class="tt-title">${info.title}</div><div class="tt-body">${info.body}</div>`;
+  tooltip.classList.add('visible');
+
+  const rect = term.getBoundingClientRect();
+  let x = rect.left;
+  let y = rect.bottom + 8;
+  if (y + 200 > window.innerHeight) y = rect.top - 200;
+  tooltip.style.left = Math.max(8, Math.min(x, window.innerWidth - 350)) + 'px';
+  tooltip.style.top = y + 'px';
+  activeTooltipEl = term;
+}, { passive: false });
+</script>
+
+</body>
+</html>
